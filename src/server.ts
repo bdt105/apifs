@@ -1,5 +1,5 @@
 import express = require('express');
-import { ServeurXXX } from './serveurXXX.class';
+import { ServeurFileSystem } from './serveurFileSystem.class';
 
 let app = express();
 
@@ -19,7 +19,7 @@ app.use(function (req, res, next) {
     next();
 });
 
-let vm = new ServeurXXX(app);
+let vm = new ServeurFileSystem(app);
 vm.assign();
 
 app.listen(3000);

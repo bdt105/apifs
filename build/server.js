@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
-const serveurXXX_class_1 = require("./serveurXXX.class");
+const serveurFileSystem_class_1 = require("./serveurFileSystem.class");
 let app = express();
 // For POST-Support
 let bodyParser = require('body-parser');
@@ -16,7 +16,7 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
-let vm = new serveurXXX_class_1.ServeurXXX(app);
+let vm = new serveurFileSystem_class_1.ServeurFileSystem(app);
 vm.assign();
 app.listen(3000);
 //# sourceMappingURL=server.js.map
