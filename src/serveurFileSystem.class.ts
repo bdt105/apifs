@@ -17,13 +17,13 @@ export class ServeurFileSystem {
     }
 
     public assign(){
-        this.app.get('/fs', function (request: any, response: any) {
+        this.app.get('/', function (request: any, response: any) {
             response.send('API Serveur File System is running');
         });
         let multer = require('multer');
         let upload = multer();
         
-        this.app.post('/fs/get', upload.array(), (request: any, response: any) => {
+        this.app.post('/', upload.array(), (request: any, response: any) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -45,7 +45,7 @@ export class ServeurFileSystem {
             }
         });
         
-        this.app.put('/fs/put', upload.array(), (request: any, response: any) => {
+        this.app.put('/', upload.array(), (request: any, response: any) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -71,7 +71,7 @@ export class ServeurFileSystem {
             }
         });
         
-        this.app.delete('/fs/delete', upload.array(), (request: any, response: any) => {
+        this.app.delete('/', upload.array(), (request: any, response: any) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -93,7 +93,7 @@ export class ServeurFileSystem {
             }
         });
         
-        this.app.patch('/fs/append', upload.array(), (request: any, response: any) => {
+        this.app.patch('/', upload.array(), (request: any, response: any) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -116,7 +116,7 @@ export class ServeurFileSystem {
             }
         });
         
-        this.app.get('/fs/:yyy/:zzz', upload.array(), (request: any, response: any) => {
+        this.app.get('/xxx/:yyy/:zzz', upload.array(), (request: any, response: any) => {
             let yyy = request.params.yyy;
             let zzz = request.params.zzz;
 

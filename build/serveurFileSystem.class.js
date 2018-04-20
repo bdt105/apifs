@@ -11,12 +11,12 @@ class ServeurFileSystem {
         return { "status": "OK", "message": text };
     }
     assign() {
-        this.app.get('/fs', function (request, response) {
+        this.app.get('/', function (request, response) {
             response.send('API Serveur File System is running');
         });
         let multer = require('multer');
         let upload = multer();
-        this.app.post('/fs/get', upload.array(), (request, response) => {
+        this.app.post('/', upload.array(), (request, response) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -39,7 +39,7 @@ class ServeurFileSystem {
                 response.send(JSON.stringify(this.errorMessage("file " + path + " does not exist")));
             }
         });
-        this.app.put('/fs/put', upload.array(), (request, response) => {
+        this.app.put('/', upload.array(), (request, response) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -66,7 +66,7 @@ class ServeurFileSystem {
                 response.send(JSON.stringify(this.errorMessage("directory " + directory + " does not exist")));
             }
         });
-        this.app.delete('/fs/delete', upload.array(), (request, response) => {
+        this.app.delete('/', upload.array(), (request, response) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -89,7 +89,7 @@ class ServeurFileSystem {
                 response.send(JSON.stringify(this.errorMessage("file " + path + " does not exist")));
             }
         });
-        this.app.patch('/fs/append', upload.array(), (request, response) => {
+        this.app.patch('/', upload.array(), (request, response) => {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -113,7 +113,7 @@ class ServeurFileSystem {
                 response.send(JSON.stringify(this.errorMessage("file " + path + " does not exist")));
             }
         });
-        this.app.get('/fs/:yyy/:zzz', upload.array(), (request, response) => {
+        this.app.get('/xxx/:yyy/:zzz', upload.array(), (request, response) => {
             let yyy = request.params.yyy;
             let zzz = request.params.zzz;
             // Do someting
