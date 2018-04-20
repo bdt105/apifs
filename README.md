@@ -2,13 +2,14 @@
 
 Based on nodejs and express.
 Write, read, delete a file.
+The file is create in a directory. If directory does not exist then it is created.
 
 ## POST /fs/get
 Reads a file
 
 POST example
 {
-	"name": "name",
+	"directory": "directory",
 	"fileName": "test.txt"
 }
 
@@ -17,7 +18,7 @@ Deletes a file
 
 POST example
 {
-	"name": "name",
+	"directory": "directory",
 	"fileName": "test.txt"
 }
 
@@ -26,7 +27,17 @@ Writes a file
 
 POST example
 {
-	"name": "name",
+	"directory": "directory",
+	"fileName": "test.txt",
+    "content": "toto xxx fffd"
+}
+
+## PATCH /fs/append
+Appends content at the end of a file
+
+POST example
+{
+	"directory": "directory",
 	"fileName": "test.txt",
     "content": "toto xxx fffd"
 }

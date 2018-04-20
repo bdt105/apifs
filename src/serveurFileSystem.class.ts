@@ -30,10 +30,10 @@ export class ServeurFileSystem {
         let upload = multer();
         
         this.app.post('/fs/get', upload.array(), (request: any, response: any) => {
-            let name = request.body.name;
+            let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
-            let path = name + '/' + fileName;
+            let path = directory + '/' + fileName;
             if (fs.existsSync(path)) {
                 fs.readFile(path, 'utf8', function (err: any,data: any) {
                     if (err) {
@@ -52,15 +52,15 @@ export class ServeurFileSystem {
         });
         
         this.app.put('/fs/put', upload.array(), (request: any, response: any) => {
-            let name = request.body.name;
+            let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
             let fs = require('fs');
-            let path = name + '/' + fileName;
-            if (!fs.existsSync(name)) {
-                fs.mkdirSync(name);
+            let path = directory + '/' + fileName;
+            if (!fs.existsSync(directory)) {
+                fs.mkdirSync(directory);
             }
-            if (fs.existsSync(name)) {
+            if (fs.existsSync(directory)) {
                 fs.writeFile(path, content, (err: any) => {
                     if (err) {
                         response.status(404);
@@ -73,15 +73,15 @@ export class ServeurFileSystem {
                 });           
             }else{
                 response.status(404);
-                response.send(JSON.stringify(this.errorMessage("directory " + name + " does not exist")));
+                response.send(JSON.stringify(this.errorMessage("directory " + directory + " does not exist")));
             }
         });
         
         this.app.delete('/fs/delete', upload.array(), (request: any, response: any) => {
-            let name = request.body.name;
+            let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
-            let path = name + '/' + fileName;
+            let path = directory + '/' + fileName;
             if (fs.existsSync(path)) {
                 fs.unlink(path, (err: any) => {
                     if (err) {
@@ -99,10 +99,27 @@ export class ServeurFileSystem {
             }
         });
         
-        this.app.patch('/fs/patch', upload.array(), (request: any, response: any) => {
-            let xxx = request.body.xxx;
-
-            // Do someting
+        this.app.patch('/fs/append', upload.array(), (request: any, response: any) => {
+            let directory = request.body.directory;
+            let fileName = request.body.fileName;
+            let content = request.body.content;
+            let fs = require('fs');
+            let path = directory + '/' + fileName;
+            if (fs.existsSync(path)) {
+                fs.appendFile(path, content, (err: any) => {
+                    if (err) {
+                        response.status(404);
+                        response.send(JSON.stringify(this.errorMessage(err)));
+                    }else{
+                        response.status(200);
+                        response.setHeader('content-type', 'application/json');
+                        response.send(this.message("file " + path + " appended"));
+                    }
+                });                
+            }else{
+                response.status(404);
+                response.send(JSON.stringify(this.errorMessage("file " + path + " does not exist")));
+            }
         });
         
         this.app.get('/fs/:yyy/:zzz', upload.array(), (request: any, response: any) => {
