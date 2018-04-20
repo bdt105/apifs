@@ -27,3 +27,5 @@ let vm = new ServeurFileSystem(app);
 vm.assign();
 
 app.listen(port);
+
+myToolbox.logg("Listening port " + port.toString());

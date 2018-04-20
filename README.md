@@ -10,7 +10,7 @@ https://github.com/bdt105/modules/tree/master/toolbox
 ## Configuration
 Configure configuration.json if you wish to change port.
 
-## POST /fs/get
+## POST /
 Reads a file.
 If fileName is empty or absent then the api retreives the list of files of the directory.
 
@@ -22,7 +22,7 @@ POST example
 }
 ```
 
-## DELETE /fs/delete
+## DELETE /
 Deletes a file
 
 ```
@@ -33,7 +33,7 @@ POST example
 }
 ```
 
-## PUT /fs/put
+## PUT /
 Writes a file
 
 ```
@@ -45,7 +45,7 @@ POST example
 }
 ```
 
-## PATCH /fs/append
+## PATCH /
 Appends content at the end of a file
 
 ```

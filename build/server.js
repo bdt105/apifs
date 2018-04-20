@@ -23,4 +23,5 @@ app.use(function (req, res, next) {
 let vm = new serveurFileSystem_class_1.ServeurFileSystem(app);
 vm.assign();
 app.listen(port);
+myToolbox.logg("Listening port " + port.toString());
 //# sourceMappingURL=server.js.map
