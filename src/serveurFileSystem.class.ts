@@ -17,7 +17,7 @@ export class ServeurFileSystem {
     }
 
     public assign(){
-        this.app.get('/', function (request: any, response: any) {
+        this.app.get('/', (request: any, response: any) => {
             response.send('API Serveur File System is running');
         });
         let multer = require('multer');
@@ -27,18 +27,26 @@ export class ServeurFileSystem {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
-            let path = directory + '/' + fileName;
+            let path = (fileName ? directory + '/' + fileName : directory);
             if (fs.existsSync(path)) {
-                fs.readFile(path, 'utf8', function (err: any,data: any) {
-                    if (err) {
-                        response.status(404);
-                        response.send(JSON.stringify(this.errorMessage(err)));
-                    }else{
+                if (fileName){
+                    fs.readFile(path, 'utf8', (err: any,data: any) => {
+                        if (err) {
+                            response.status(404);
+                            response.send(JSON.stringify(this.errorMessage(err)));
+                        }else{
+                            response.status(200);
+                            response.setHeader('content-type', 'application/json');
+                            response.send(data);
+                        }
+                    });           
+                } else{
+                    fs.readdir(directory, (err: any, files: any) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        response.send(data);
-                    }
-                });            
+                        response.send(files);
+                    });
+                }
             }else{
                 response.status(404);
                 response.send(JSON.stringify(this.errorMessage("file " + path + " does not exist")));

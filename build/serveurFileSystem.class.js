@@ -11,7 +11,7 @@ class ServeurFileSystem {
         return { "status": "OK", "message": text };
     }
     assign() {
-        this.app.get('/', function (request, response) {
+        this.app.get('/', (request, response) => {
             response.send('API Serveur File System is running');
         });
         let multer = require('multer');
@@ -20,19 +20,28 @@ class ServeurFileSystem {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
-            let path = directory + '/' + fileName;
+            let path = (fileName ? directory + '/' + fileName : directory);
             if (fs.existsSync(path)) {
-                fs.readFile(path, 'utf8', function (err, data) {
-                    if (err) {
-                        response.status(404);
-                        response.send(JSON.stringify(this.errorMessage(err)));
-                    }
-                    else {
+                if (fileName) {
+                    fs.readFile(path, 'utf8', (err, data) => {
+                        if (err) {
+                            response.status(404);
+                            response.send(JSON.stringify(this.errorMessage(err)));
+                        }
+                        else {
+                            response.status(200);
+                            response.setHeader('content-type', 'application/json');
+                            response.send(data);
+                        }
+                    });
+                }
+                else {
+                    fs.readdir(directory, (err, files) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        response.send(data);
-                    }
-                });
+                        response.send(files);
+                    });
+                }
             }
             else {
                 response.status(404);
