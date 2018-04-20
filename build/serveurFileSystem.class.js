@@ -3,11 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class ServeurFileSystem {
     constructor(app) {
         this.app = app;
-        this.loadConf();
-    }
-    loadConf() {
-        var fs = require('fs');
-        this.conf = JSON.parse(fs.readFileSync('conf.json', 'utf8'));
     }
     errorMessage(text) {
         return { "status": "ERR", "message": text };

@@ -6,12 +6,6 @@ export class ServeurFileSystem {
 
     constructor(app: any){
         this.app = app;
-        this.loadConf();
-    }
-
-    private loadConf(){
-        var fs = require('fs');
-        this.conf = JSON.parse(fs.readFileSync('conf.json', 'utf8'));
     }
 
     private errorMessage(text: string){

@@ -2,7 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
 const serveurFileSystem_class_1 = require("./serveurFileSystem.class");
+const myToolbox_1 = require("./myToolbox");
 let app = express();
+let myToolbox = new myToolbox_1.MyToolbox();
+let configuration = myToolbox.loadFromJsonFile("./configuration.json");
+let port = configuration.common.port;
 // For POST-Support
 let bodyParser = require('body-parser');
 let multer = require('multer');
@@ -18,5 +22,5 @@ app.use(function (req, res, next) {
 });
 let vm = new serveurFileSystem_class_1.ServeurFileSystem(app);
 vm.assign();
-app.listen(3000);
+app.listen(port);
 //# sourceMappingURL=server.js.map

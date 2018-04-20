@@ -1,0 +1,10 @@
+
+{
+    "common":
+    {
+        "port": 3000,
+        "logToFile": true,
+        "logToConsole": true,
+        "logFile" : "authentification.log"
+    }
+}

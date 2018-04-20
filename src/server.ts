@@ -1,7 +1,11 @@
 import express = require('express');
 import { ServeurFileSystem } from './serveurFileSystem.class';
+import { MyToolbox } from "./myToolbox";
 
 let app = express();
+let myToolbox = new MyToolbox();
+let configuration = myToolbox.loadFromJsonFile("./configuration.json");
+let port = configuration.common.port;
 
 // For POST-Support
 let bodyParser = require('body-parser');
@@ -22,4 +26,4 @@ app.use(function (req, res, next) {
 let vm = new ServeurFileSystem(app);
 vm.assign();
 
-app.listen(3000);
+app.listen(port);

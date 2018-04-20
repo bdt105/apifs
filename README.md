@@ -4,6 +4,12 @@ Based on nodejs and express.
 Write, read, delete a file.
 The file is create in a directory. If directory does not exist then it is created.
 
+## Dependencies
+https://github.com/bdt105/modules/tree/master/toolbox
+
+## Configuration
+Configure configuration.json if you wish to change port.
+
 ## POST /fs/get
 Reads a file
 
