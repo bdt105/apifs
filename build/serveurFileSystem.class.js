@@ -1,14 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class ServeurFileSystem {
-    constructor(app) {
+    constructor(app, connexion) {
         this.app = app;
+        this.connexion = connexion;
     }
     errorMessage(text) {
         return { "status": "ERR", "message": text };
     }
     message(text) {
         return { "status": "OK", "message": text };
+    }
+    checkToken(token, response) {
+        if (!this.connexion.isTokenValid(token)) {
+            response.status(403);
+            response.send(JSON.stringify(this.errorMessage("Invalid token")));
+            return false;
+        }
+        return true;
     }
     assign() {
         this.app.get('/', (request, response) => {
@@ -17,6 +26,8 @@ class ServeurFileSystem {
         let multer = require('multer');
         let upload = multer();
         this.app.post('/', upload.array(), (request, response) => {
+            if (!this.checkToken(request.body.token, response))
+                return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -49,6 +60,8 @@ class ServeurFileSystem {
             }
         });
         this.app.put('/', upload.array(), (request, response) => {
+            if (!this.checkToken(request.body.token, response))
+                return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -76,6 +89,8 @@ class ServeurFileSystem {
             }
         });
         this.app.delete('/', upload.array(), (request, response) => {
+            if (!this.checkToken(request.body.token, response))
+                return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let fs = require('fs');
@@ -99,6 +114,8 @@ class ServeurFileSystem {
             }
         });
         this.app.patch('/', upload.array(), (request, response) => {
+            if (!this.checkToken(request.body.token, response))
+                return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let content = request.body.content;
@@ -123,6 +140,8 @@ class ServeurFileSystem {
             }
         });
         this.app.get('/xxx/:yyy/:zzz', upload.array(), (request, response) => {
+            if (!this.checkToken(request.body.token, response))
+                return;
             let yyy = request.params.yyy;
             let zzz = request.params.zzz;
             // Do someting

@@ -10,7 +10,7 @@
             "type": "node",
             "request": "launch",
             "name": "Lancer le programme",
-            "program": "${workspaceRoot}/build/testGoogle.js",
+            "program": "${workspaceRoot}/build/server.js",
             "cwd": "${workspaceRoot}/build/",
             "sourceMaps": true,
             "outFiles": [
