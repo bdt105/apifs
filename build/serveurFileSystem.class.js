@@ -12,7 +12,7 @@ class ServeurFileSystem {
         return { "status": "OK", "message": text };
     }
     checkToken(token, response) {
-        if (!this.connexion.isTokenValid(token)) {
+        if (this.connexion.jwtConfiguration && !this.connexion.isTokenValid(token)) {
             response.status(403);
             response.send(JSON.stringify(this.errorMessage("Invalid token")));
             return false;

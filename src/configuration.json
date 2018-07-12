@@ -7,6 +7,7 @@
     },
     "authentification": 
     {
+        "active": true,
         "secret": "122344",
         "salt": "$2a$10$Vn/zPCM8sSSaYnRmggV4CO",
         "userRequestEmail": "bdt105@gmail.com",

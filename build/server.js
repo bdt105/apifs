@@ -21,7 +21,10 @@ app.use(function (req, res, next) {
     next();
 });
 // Only secret is needed bacause no token will be created here, only token check. Secret here must be the same as sender.
-let jwtConfiguration = new dist_1.JwtConfiguration(configuration.authentification.secret, "", "", "");
+let jwtConfiguration = null;
+if (configuration.authentification && configuration.authentification.active) {
+    jwtConfiguration = new dist_1.JwtConfiguration(configuration.authentification.secret, "", "", "");
+}
 // No access to database only check if token is ok
 var c = new dist_1.Connexion(null, jwtConfiguration);
 let vm = new serveurFileSystem_class_1.ServeurFileSystem(app, c);

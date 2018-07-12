@@ -11,8 +11,8 @@ let port = configuration.common.port;
 // For POST-Support
 let bodyParser = require('body-parser');
 
-app.use(bodyParser.json({limit: '50mb'}));
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true, parameterLimit: 50000}));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*'); // Website you wish to allow to connect
@@ -25,7 +25,10 @@ app.use(function (req, res, next) {
 
 
 // Only secret is needed bacause no token will be created here, only token check. Secret here must be the same as sender.
-let jwtConfiguration = new JwtConfiguration(configuration.authentification.secret, "", "", ""); 
+let jwtConfiguration = null;
+if (configuration.authentification && configuration.authentification.active) {
+    jwtConfiguration = new JwtConfiguration(configuration.authentification.secret, "", "", "");
+}
 
 // No access to database only check if token is ok
 var c = new Connexion(null, jwtConfiguration);

@@ -18,7 +18,7 @@ export class ServeurFileSystem {
     }
 
     private checkToken(token: any, response: any) {
-        if (!this.connexion.isTokenValid(token)) {
+        if (this.connexion.jwtConfiguration && !this.connexion.isTokenValid(token)) {
             response.status(403);
             response.send(JSON.stringify(this.errorMessage("Invalid token")));
             return false;
