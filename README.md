@@ -13,12 +13,25 @@ Configure configuration.json if you wish to change port.
 ## POST /
 Reads a file.
 If fileName is empty or absent then the api retreives the list of files of the directory.
+``offset`` and ``limit`` must be integers, both must be present or both are ignored.
+``searchParams`` allow to search with the table of results, default values are those in the example.
+
 
 ```
 POST example
 {
 	"directory": "directory",
-	"fileName": "test.txt"
+	"fileName": "test.txt",
+	"offset": 2,
+	"limit": 5,
+	"searchParams": {
+		"keySearch": "", 
+		"keyValue": "",
+        "caseSensitive": false, 
+		"accentSensitive": false, 
+		"exactMatching": true, 
+		"include": false
+	}
 }
 ```
 

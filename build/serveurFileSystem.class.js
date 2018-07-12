@@ -1,7 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const dist_1 = require("bdt105toolbox/dist");
+const util_1 = require("util");
 class ServeurFileSystem {
     constructor(app, connexion) {
+        this.toolbox = new dist_1.Toolbox();
         this.app = app;
         this.connexion = connexion;
     }
@@ -19,6 +22,33 @@ class ServeurFileSystem {
         }
         return true;
     }
+    truncFile(data, offset, limit, searchParams = null) {
+        let ret = data;
+        if (this.toolbox.isJson(data)) {
+            let tab = [];
+            let dat = this.toolbox.parseJson(data);
+            if (Array.isArray(dat)) {
+                if (searchParams) {
+                    dat = this.toolbox.filterArrayOfObjects(dat, searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                }
+                if (dat && dat.length > 0) {
+                    let off = dat.length >= offset ? offset : 0;
+                    let max = dat.length >= offset + limit ? offset + limit : dat.length;
+                    for (var i = off; i < max; i++) {
+                        tab.push(dat[i]);
+                    }
+                    ret = JSON.stringify(tab);
+                }
+                else {
+                    ret = "";
+                }
+            }
+        }
+        else {
+            ret = data.substr(offset, limit);
+        }
+        return ret;
+    }
     assign() {
         this.app.get('/', (request, response) => {
             response.send('API Serveur File System is running');
@@ -30,6 +60,24 @@ class ServeurFileSystem {
                 return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
+            let limit = Number.parseInt(request.body.limit);
+            if (Number.isNaN(limit)) {
+                response.status(400);
+                response.send(JSON.stringify(this.errorMessage("limit must be an integer or absent")));
+                return;
+            }
+            let offset = Number.parseInt(request.body.offset);
+            if (Number.isNaN(offset)) {
+                response.status(400);
+                response.send(JSON.stringify(this.errorMessage("offset must be an integer or absent")));
+                return;
+            }
+            let searchParams = request.body.searchParams;
+            if (searchParams && !util_1.isObject(searchParams)) {
+                response.status(400);
+                response.send(JSON.stringify(this.errorMessage("searchParams must be an object (searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include) or absent")));
+                return;
+            }
             let fs = require('fs');
             let path = (fileName ? directory + '/' + fileName : directory);
             if (fs.existsSync(path)) {
@@ -42,7 +90,16 @@ class ServeurFileSystem {
                         else {
                             response.status(200);
                             response.setHeader('content-type', 'application/json');
-                            response.send(data);
+                            if ((offset && limit) || searchParams) {
+                                let ret = this.truncFile(data, offset, limit, searchParams);
+                                if (!ret) {
+                                    response.status(404);
+                                }
+                                response.send(ret);
+                            }
+                            else {
+                                response.send(data);
+                            }
                         }
                     });
                 }
