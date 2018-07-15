@@ -27,7 +27,7 @@ if (configuration.authentification && configuration.authentification.active) {
 }
 // No access to database only check if token is ok
 var c = new dist_1.Connexion(null, jwtConfiguration);
-let vm = new serveurFileSystem_class_1.ServeurFileSystem(app, c);
+let vm = new serveurFileSystem_class_1.ServeurFileSystem(app, c, configuration);
 vm.assign();
 app.listen(port);
 myToolbox.logg("Listening port " + port.toString());

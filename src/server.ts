@@ -33,7 +33,7 @@ if (configuration.authentification && configuration.authentification.active) {
 // No access to database only check if token is ok
 var c = new Connexion(null, jwtConfiguration);
 
-let vm = new ServeurFileSystem(app, c);
+let vm = new ServeurFileSystem(app, c, configuration);
 vm.assign();
 
 app.listen(port);

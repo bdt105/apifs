@@ -5,11 +5,13 @@ import { isObject } from 'util';
 export class ServeurFileSystem {
     private app: any;
     private connexion: Connexion;
+    private configuration: any;
     private toolbox = new Toolbox();
 
-    constructor(app: any, connexion: Connexion) {
+    constructor(app: any, connexion: Connexion, configuration: any) {
         this.app = app;
         this.connexion = connexion;
+        this.configuration = configuration;
     }
 
     private errorMessage(text: string) {
@@ -20,11 +22,26 @@ export class ServeurFileSystem {
         return { "status": "OK", "message": text };
     }
 
+    private isUserAllowed(email: string){
+        let allowedUsers = this.configuration.allowedUsers
+        let temp = this.toolbox.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
+        return temp.length > 0;
+    }
+
     private checkToken(token: any, response: any) {
         if (this.connexion.jwtConfiguration && !this.connexion.isTokenValid(token)) {
             response.status(403);
-            response.send(JSON.stringify(this.errorMessage("Invalid token")));
+            response.send(JSON.stringify(this.errorMessage("Invalid token or user not allowed")));
             return false;
+        }else{
+            let tok: Token = this.connexion.checkJwt(token);
+            if (tok.decoded){
+                if (!this.isUserAllowed(tok.decoded.email)){
+                    response.status(403);
+                    response.send(JSON.stringify(this.errorMessage("Invalid token or user not allowed")));
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -69,13 +86,13 @@ export class ServeurFileSystem {
             let directory = request.body.directory;
             let fileName = request.body.fileName;
             let limit = Number.parseInt(request.body.limit);
-            if (Number.isNaN(limit)) {
+            if (request.body.limit && Number.isNaN(limit)) {
                 response.status(400);
                 response.send(JSON.stringify(this.errorMessage("limit must be an integer or absent")));
                 return;
             }
             let offset = Number.parseInt(request.body.offset);
-            if (Number.isNaN(offset)) {
+            if (request.body.offset && Number.isNaN(offset)) {
                 response.status(400);
                 response.send(JSON.stringify(this.errorMessage("offset must be an integer or absent")));
                 return;
