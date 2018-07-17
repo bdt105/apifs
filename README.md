@@ -30,7 +30,8 @@ POST example
         "caseSensitive": false, 
 		"accentSensitive": false, 
 		"exactMatching": true, 
-		"include": false
+		"include": false,
+		"allFields": false
 	}
 }
 ```

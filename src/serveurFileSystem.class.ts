@@ -22,7 +22,7 @@ export class ServeurFileSystem {
         return { "status": "OK", "message": text };
     }
 
-    private isUserAllowed(email: string){
+    private isUserAllowed(email: string) {
         let allowedUsers = this.configuration.allowedUsers
         let temp = this.toolbox.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
         return temp.length > 0;
@@ -33,10 +33,10 @@ export class ServeurFileSystem {
             response.status(403);
             response.send(JSON.stringify(this.errorMessage("Invalid token or user not allowed")));
             return false;
-        }else{
+        } else {
             let tok: Token = this.connexion.checkJwt(token);
-            if (tok.decoded){
-                if (!this.isUserAllowed(tok.decoded.email)){
+            if (tok.decoded) {
+                if (!this.isUserAllowed(tok.decoded.email)) {
                     response.status(403);
                     response.send(JSON.stringify(this.errorMessage("Invalid token or user not allowed")));
                     return false;
@@ -45,17 +45,39 @@ export class ServeurFileSystem {
         }
         return true;
     }
+    
+    // filterArrayOfObjects(array: any[], keySearch: string, keyValue: any,
+    //     caseSensitive: boolean = false, accentSensitive: boolean = false, exactMatching: boolean = true, include: boolean = false) {
+    //     if (array && Array.isArray(array)) {
+    //         return array.filter((row) => {
+    //             if (typeof keyValue === 'string') {
+    //                 return this.compareString(row[keySearch], keyValue, caseSensitive, accentSensitive, exactMatching, include);
+    //             } else {
+    //                 return row[keySearch] == keyValue;
+    //             }
+    //         });
+    //     } else {
+    //         return array;
+    //     }
+    // }
 
-    private truncFile(data: string, offset: number, limit: number, searchParams: any = null) {
+
+
+    private truncFile(data: string, offset: number, limit: number, fileName: string, directory: string, searchParams: any): any {
         let ret = data;
         if (this.toolbox.isJson(data)) {
             let tab = [];
             let dat = this.toolbox.parseJson(data);
             if (Array.isArray(dat)) {
                 if (searchParams) {
-                    dat = this.toolbox.filterArrayOfObjects(dat,
-                        searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive,
-                        searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                    if (!searchParams.allFields) {
+                        dat = this.toolbox.filterArrayOfObjects(dat,
+                            searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive,
+                            searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                    }else{
+                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.keyValue, searchParams.caseSensitive,
+                            searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                    }
                 }
                 if (dat && dat.length > 0) {
                     let off = dat.length >= offset ? offset : 0;
@@ -63,9 +85,10 @@ export class ServeurFileSystem {
                     for (var i = off; i < max; i++) {
                         tab.push(dat[i]);
                     }
-                    ret = JSON.stringify(tab);
+                    let resu = { "fileName": fileName, "directory": directory, "originalLength": dat.length, "offset": offset, "limit": limit, "searchParams": searchParams, "data": tab }
+                    ret = JSON.stringify(resu);
                 } else {
-                    ret = "";
+                    ret = null;
                 }
             }
         } else {
@@ -114,14 +137,14 @@ export class ServeurFileSystem {
                         } else {
                             response.status(200);
                             response.setHeader('content-type', 'application/json');
-                            if ((offset && limit) || searchParams) {
-                                let ret = this.truncFile(data, offset, limit, searchParams);
+                            if ((offset != null && limit != null) || searchParams) {
+                                let ret = this.truncFile(data, offset, limit, fileName, directory, searchParams);
                                 if (!ret) {
                                     response.status(404);
                                 }
                                 response.send(ret);
                             } else {
-                                response.send(data);
+                                response.send({ "fileName": fileName, "directory": directory, "data": data });
                             }
                         }
                     });
@@ -129,7 +152,7 @@ export class ServeurFileSystem {
                     fs.readdir(directory, (err: any, files: any) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        response.send(files);
+                        response.send({ "fileName": fileName, "directory": directory, "data": files });
                     });
                 }
             } else {

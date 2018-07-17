@@ -5,7 +5,7 @@
     "dependencies": {
         "@types/express": "^4.11.1",
         "bcryptjs": "^2.4.3",
-        "bdt105toolbox": "1.0.89",
+        "bdt105toolbox": "1.0.92",
         "bdt105connexion": "^1.0.19",
         "body-parser": "^1.18.2",
         "express": "^4.16.2",
