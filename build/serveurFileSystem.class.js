@@ -38,24 +38,41 @@ class ServeurFileSystem {
         }
         return true;
     }
-    // filterArrayOfObjects(array: any[], keySearch: string, keyValue: any,
-    //     caseSensitive: boolean = false, accentSensitive: boolean = false, exactMatching: boolean = true, include: boolean = false) {
-    //     if (array && Array.isArray(array)) {
-    //         return array.filter((row) => {
-    //             if (typeof keyValue === 'string') {
-    //                 return this.compareString(row[keySearch], keyValue, caseSensitive, accentSensitive, exactMatching, include);
-    //             } else {
-    //                 return row[keySearch] == keyValue;
-    //             }
-    //         });
-    //     } else {
-    //         return array;
-    //     }
-    // }
+    prepareStrinForSearch(text, caseSensitive, accentSensitive) {
+        let t = text;
+        if (!accentSensitive) {
+            t = this.toolbox.noAccent(t);
+        }
+        if (!caseSensitive) {
+            t = t.toUpperCase();
+        }
+        return t;
+    }
+    formatResult(data, originalLength, offset, limit, fileName, directory, searchParams) {
+        return {
+            "fileName": fileName, "directory": directory, "originalLength": originalLength,
+            "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length, "data": data
+        };
+    }
+    truncData(data, offset, limit) {
+        if (offset > 0) {
+            data.splice(0, offset);
+            data.splice(limit, data.length);
+        }
+        else {
+            data.splice(limit, data.length);
+        }
+        // let ret = [];
+        // let off = data.length >= offset ? offset : 0;
+        // let max = data.length >= offset + limit ? offset + limit : data.length;
+        // for (var i = off; i < max; i++) {
+        //     ret.push(data[i]);
+        // }
+        // return ret;
+    }
     truncFile(data, offset, limit, fileName, directory, searchParams) {
         let ret = data;
         if (this.toolbox.isJson(data)) {
-            let tab = [];
             let dat = this.toolbox.parseJson(data);
             if (Array.isArray(dat)) {
                 if (searchParams) {
@@ -67,13 +84,9 @@ class ServeurFileSystem {
                     }
                 }
                 if (dat && dat.length > 0) {
-                    let off = dat.length >= offset ? offset : 0;
-                    let max = dat.length >= offset + limit ? offset + limit : dat.length;
-                    for (var i = off; i < max; i++) {
-                        tab.push(dat[i]);
-                    }
-                    let resu = { "fileName": fileName, "directory": directory, "originalLength": dat.length, "offset": offset, "limit": limit, "searchParams": searchParams, "data": tab };
-                    ret = JSON.stringify(resu);
+                    let originalLength = dat.length;
+                    let tab = this.truncData(dat, offset, limit);
+                    ret = this.formatResult(dat, originalLength, offset, limit, fileName, directory, searchParams);
                 }
                 else {
                     ret = null;
@@ -134,7 +147,8 @@ class ServeurFileSystem {
                                 response.send(ret);
                             }
                             else {
-                                response.send({ "fileName": fileName, "directory": directory, "data": data });
+                                let resu = this.formatResult(data, data, offset, limit, fileName, directory, searchParams);
+                                response.send(resu);
                             }
                         }
                     });
@@ -143,7 +157,10 @@ class ServeurFileSystem {
                     fs.readdir(directory, (err, files) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        response.send({ "fileName": fileName, "directory": directory, "data": files });
+                        let originalLength = files.length;
+                        let resu = this.truncData(files, offset, limit);
+                        let extra = this.formatResult(files, originalLength, offset, limit, fileName, directory, searchParams);
+                        response.send(extra);
                     });
                 }
             }

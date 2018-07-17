@@ -1,0 +1,14 @@
+[
+    {
+        "directory": "TES@GMAIL.COM",
+        "fileName": "dataOld.json",
+        "configuration": {
+            "scanField": "EAN13",
+            "idField": "EAN13",
+            "listFields":[
+                "LIBELLE ARTICLE",
+                "NOMECL"
+            ]
+        }
+    }
+]
