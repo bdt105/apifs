@@ -6,7 +6,9 @@ const myToolbox_1 = require("./myToolbox");
 const dist_1 = require("bdt105connexion/dist");
 let app = express();
 let myToolbox = new myToolbox_1.MyToolbox();
+let fileConfiguration = myToolbox.loadFromJsonFile("./fileConfiguration.json");
 let configuration = myToolbox.loadFromJsonFile("./configuration.json");
+configuration.fileConfiguration = fileConfiguration;
 let port = configuration.common.port;
 // For POST-Support
 let bodyParser = require('body-parser');

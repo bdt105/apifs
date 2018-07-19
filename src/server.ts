@@ -5,8 +5,11 @@ import { Connexion, JwtConfiguration } from 'bdt105connexion/dist';
 
 let app = express();
 let myToolbox = new MyToolbox();
+let fileConfiguration = myToolbox.loadFromJsonFile("./fileConfiguration.json");
 let configuration = myToolbox.loadFromJsonFile("./configuration.json");
+configuration.fileConfiguration = fileConfiguration;
 let port = configuration.common.port;
+
 
 // For POST-Support
 let bodyParser = require('body-parser');
@@ -22,7 +25,6 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
-
 
 // Only secret is needed bacause no token will be created here, only token check. Secret here must be the same as sender.
 let jwtConfiguration = null;

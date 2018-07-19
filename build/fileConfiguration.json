@@ -1,0 +1,16 @@
+[
+    {
+        "directory": "TES@GMAIL.COM",
+        "fileName": "listing.json",
+        "type": "excel",
+        "configuration": {
+            "sheetName": "Mercalys",
+            "scanField": "EAN13",
+            "idField": "EAN13",
+            "listFields":[
+                "LIBELLE ARTICLE",
+                "NOMECL"
+            ]
+        }
+    }
+]

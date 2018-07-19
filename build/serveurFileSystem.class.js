@@ -48,11 +48,24 @@ class ServeurFileSystem {
         }
         return t;
     }
+    getFileConfiguration(fileName, directory) {
+        let ret = {};
+        for (var i = 0; i < this.configuration.fileConfiguration.length; i++) {
+            if (this.configuration.fileConfiguration[i].directory == directory &&
+                this.configuration.fileConfiguration[i].fileName == fileName) {
+                ret = this.configuration.fileConfiguration[i];
+            }
+        }
+        return ret;
+    }
     formatResult(data, originalLength, offset, limit, fileName, directory, searchParams) {
-        return {
+        let fileConfiguration = this.getFileConfiguration(fileName, directory);
+        let ret = {
             "fileName": fileName, "directory": directory, "originalLength": originalLength,
-            "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length, "data": data
+            "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length,
+            "originalFileInformation": fileConfiguration, "data": data
         };
+        return ret;
     }
     truncData(data, offset, limit) {
         if (offset > 0) {
@@ -77,10 +90,10 @@ class ServeurFileSystem {
             if (Array.isArray(dat)) {
                 if (searchParams) {
                     if (!searchParams.allFields) {
-                        dat = this.toolbox.filterArrayOfObjects(dat, searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                        dat = this.toolbox.filterArrayOfObjects(dat, searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     }
                     else {
-                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     }
                 }
                 if (dat && dat.length > 0) {
@@ -124,7 +137,7 @@ class ServeurFileSystem {
             let searchParams = request.body.searchParams;
             if (searchParams && !util_1.isObject(searchParams)) {
                 response.status(400);
-                response.send(JSON.stringify(this.errorMessage("searchParams must be an object (searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include) or absent")));
+                response.send(JSON.stringify(this.errorMessage("searchParams must be an object (searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include) or absent")));
                 return;
             }
             let fs = require('fs');
@@ -137,6 +150,7 @@ class ServeurFileSystem {
                             response.send(JSON.stringify(this.errorMessage(err)));
                         }
                         else {
+                            data = data.replace('{"Mercalys":[', '[').replace("]}", "]");
                             response.status(200);
                             response.setHeader('content-type', 'application/json');
                             if ((offset != null && limit != null) || searchParams) {

@@ -1,8 +1,10 @@
 [
     {
         "directory": "TES@GMAIL.COM",
-        "fileName": "dataOld.json",
+        "fileName": "listing.xlsx",
+        "type": "excel",
         "configuration": {
+            "sheetName": "Mercalys",
             "scanField": "EAN13",
             "idField": "EAN13",
             "listFields":[

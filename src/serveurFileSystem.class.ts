@@ -57,17 +57,32 @@ export class ServeurFileSystem {
         return t;
     }
 
-    private formatResult(data: any, originalLength: number, offset: number, limit: number, fileName: string, directory: string, searchParams: any) {
-        return { 
-            "fileName": fileName, "directory": directory, "originalLength": originalLength, 
-            "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length, "data": data }
+    private getFileConfiguration(fileName: string, directory: string){
+        let ret: any = {};
+        for (var i = 0; i < this.configuration.fileConfiguration.length; i++) {
+            if (this.configuration.fileConfiguration[i].directory == directory &&
+                this.configuration.fileConfiguration[i].fileName == fileName) {
+                    ret = this.configuration.fileConfiguration[i];
+            }
+        }   
+        return ret;     
     }
 
-    private truncData(data: any[], offset: number, limit: number){
-        if (offset > 0){
+    private formatResult(data: any, originalLength: number, offset: number, limit: number, fileName: string, directory: string, searchParams: any) {
+        let fileConfiguration = this.getFileConfiguration(fileName, directory);
+        let ret: any = {
+            "fileName": fileName, "directory": directory, "originalLength": originalLength,
+            "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length,
+            "originalFileInformation": fileConfiguration, "data": data
+        };
+        return ret;
+    }
+
+    private truncData(data: any[], offset: number, limit: number) {
+        if (offset > 0) {
             data.splice(0, offset);
             data.splice(limit, data.length);
-        }else{
+        } else {
             data.splice(limit, data.length);
         }
         // let ret = [];
@@ -87,10 +102,10 @@ export class ServeurFileSystem {
                 if (searchParams) {
                     if (!searchParams.allFields) {
                         dat = this.toolbox.filterArrayOfObjects(dat,
-                            searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive,
+                            searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive,
                             searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     } else {
-                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.keyValue, searchParams.caseSensitive,
+                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.searchTerm, searchParams.caseSensitive,
                             searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     }
                 }
@@ -134,7 +149,7 @@ export class ServeurFileSystem {
             let searchParams = request.body.searchParams;
             if (searchParams && !isObject(searchParams)) {
                 response.status(400);
-                response.send(JSON.stringify(this.errorMessage("searchParams must be an object (searchParams.keySearch, searchParams.keyValue, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include) or absent")));
+                response.send(JSON.stringify(this.errorMessage("searchParams must be an object (searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include) or absent")));
                 return;
             }
             let fs = require('fs');
@@ -146,6 +161,7 @@ export class ServeurFileSystem {
                             response.status(404);
                             response.send(JSON.stringify(this.errorMessage(err)));
                         } else {
+                            data = data.replace('{"Mercalys":[', '[').replace("]}", "]");
                             response.status(200);
                             response.setHeader('content-type', 'application/json');
                             if ((offset != null && limit != null) || searchParams) {
