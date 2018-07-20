@@ -14,7 +14,6 @@ const result = excelToJson({
     columnToKey: {
         '*': '{{columnHeader}}'
     }
-
 });
 
 var fs = require('fs');

@@ -1,7 +1,7 @@
 [
     {
         "directory": "TES@GMAIL.COM",
-        "fileName": "listing.json",
+        "fileName": "listing",
         "type": "excel",
         "configuration": {
             "sheetName": "Mercalys",

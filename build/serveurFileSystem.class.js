@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const dist_1 = require("bdt105toolbox/dist");
+const myToolbox_1 = require("./myToolbox");
 const util_1 = require("util");
 class ServeurFileSystem {
     constructor(app, connexion, configuration) {
-        this.toolbox = new dist_1.Toolbox();
+        this.myToolbox = new myToolbox_1.MyToolbox();
         this.app = app;
         this.connexion = connexion;
         this.configuration = configuration;
@@ -17,7 +17,7 @@ class ServeurFileSystem {
     }
     isUserAllowed(email) {
         let allowedUsers = this.configuration.allowedUsers;
-        let temp = this.toolbox.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
+        let temp = this.myToolbox.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
         return temp.length > 0;
     }
     checkToken(token, response) {
@@ -41,25 +41,15 @@ class ServeurFileSystem {
     prepareStrinForSearch(text, caseSensitive, accentSensitive) {
         let t = text;
         if (!accentSensitive) {
-            t = this.toolbox.noAccent(t);
+            t = this.myToolbox.noAccent(t);
         }
         if (!caseSensitive) {
             t = t.toUpperCase();
         }
         return t;
     }
-    getFileConfiguration(fileName, directory) {
-        let ret = {};
-        for (var i = 0; i < this.configuration.fileConfiguration.length; i++) {
-            if (this.configuration.fileConfiguration[i].directory == directory &&
-                this.configuration.fileConfiguration[i].fileName == fileName) {
-                ret = this.configuration.fileConfiguration[i];
-            }
-        }
-        return ret;
-    }
     formatResult(data, originalLength, offset, limit, fileName, directory, searchParams) {
-        let fileConfiguration = this.getFileConfiguration(fileName, directory);
+        let fileConfiguration = this.myToolbox.getFileOriginalInformation(fileName, directory);
         let ret = {
             "fileName": fileName, "directory": directory, "originalLength": originalLength,
             "offset": offset, "limit": limit, "searchParams": searchParams, "length": data.length,
@@ -68,12 +58,14 @@ class ServeurFileSystem {
         return ret;
     }
     truncData(data, offset, limit) {
-        if (offset > 0) {
+        if (offset > 0 && !Number.isNaN(limit)) {
             data.splice(0, offset);
             data.splice(limit, data.length);
         }
         else {
-            data.splice(limit, data.length);
+            if (!Number.isNaN(limit)) {
+                data.splice(limit, data.length);
+            }
         }
         // let ret = [];
         // let off = data.length >= offset ? offset : 0;
@@ -85,15 +77,15 @@ class ServeurFileSystem {
     }
     truncFile(data, offset, limit, fileName, directory, searchParams) {
         let ret = data;
-        if (this.toolbox.isJson(data)) {
-            let dat = this.toolbox.parseJson(data);
+        if (this.myToolbox.isJson(data)) {
+            let dat = this.myToolbox.parseJson(data);
             if (Array.isArray(dat)) {
                 if (searchParams) {
                     if (!searchParams.allFields) {
-                        dat = this.toolbox.filterArrayOfObjects(dat, searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                        dat = this.myToolbox.filterArrayOfObjects(dat, searchParams.fieldName, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     }
                     else {
-                        dat = this.toolbox.filterArrayOfObjectsAllFields(dat, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
+                        dat = this.myToolbox.filterArrayOfObjectsAllFields(dat, searchParams.searchTerm, searchParams.caseSensitive, searchParams.accentSensitive, searchParams.exactMatching, searchParams.include);
                     }
                 }
                 if (dat && dat.length > 0) {
@@ -141,7 +133,7 @@ class ServeurFileSystem {
                 return;
             }
             let fs = require('fs');
-            let path = (fileName ? directory + '/' + fileName : directory);
+            let path = (fileName ? directory + '/' + fileName + '.json' : directory);
             if (fs.existsSync(path)) {
                 if (fileName) {
                     fs.readFile(path, 'utf8', (err, data) => {
@@ -150,7 +142,10 @@ class ServeurFileSystem {
                             response.send(JSON.stringify(this.errorMessage(err)));
                         }
                         else {
-                            data = data.replace('{"Mercalys":[', '[').replace("]}", "]");
+                            let oi = this.myToolbox.getFileOriginalInformation(fileName, directory);
+                            let sheet = (oi && oi.configuration && oi.configuration.sheetName) ?
+                                oi.configuration.sheetName : "sheet1";
+                            data = data.replace('{"' + sheet + '":[', '[').replace("]}", "]");
                             response.status(200);
                             response.setHeader('content-type', 'application/json');
                             if ((offset != null && limit != null) || searchParams) {
@@ -270,6 +265,14 @@ class ServeurFileSystem {
             let zzz = request.params.zzz;
             // Do someting
         });
+        // this.app.post('/upload', this.upload.single('avatar'), function (req: any, res: any, next: any) {
+        //     var tmp_path = req.file.path;
+        //     // req.file is the `avatar` file
+        //     // req.body will hold the text fields, if there were any
+        //     console.log(req.body, 'body');
+        //     console.log(req.file, 'file');
+        //     res.end();
+        // });
     }
 }
 exports.ServeurFileSystem = ServeurFileSystem;
