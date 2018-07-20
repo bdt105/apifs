@@ -9,15 +9,15 @@ class UploadServer {
         this.configuration = configuration;
         this.upload = upload;
     }
-    excelToJson(excelFileName, jsonFileName) {
+    excelToJson(callbackFailure, config, excelFileName, jsonFileName) {
         let excelToJson = require('convert-excel-to-json');
         let result = excelToJson({
             sourceFile: excelFileName,
             sheets: [
                 {
-                    name: 'Mercalys',
+                    name: config.sheetName,
                     header: {
-                        rows: 7
+                        rows: config.headerRowNumber
                     }
                 }
             ],
@@ -27,10 +27,9 @@ class UploadServer {
         });
         var fs = require('fs');
         fs.writeFile(jsonFileName, JSON.stringify(result), (err) => {
-            if (err) {
-                return console.log(err);
+            if (callbackFailure) {
+                callbackFailure(err);
             }
-            console.log("The file was saved! - " + jsonFileName);
         });
     }
     assign() {
@@ -43,12 +42,14 @@ class UploadServer {
             fs.rename(uploadDirectory + req.file.filename, destinationFileName, (err) => {
                 if (err)
                     throw err;
-                res.send("file saved on server");
-                fs.stat('./upload/' + req.file.originalname, (err, stats) => {
+                let callbackFailure = (err) => {
                     if (err)
                         throw err;
-                    console.log(`stats: ${JSON.stringify(stats)}`);
-                });
+                    res.send("file saved on server and turned into json");
+                };
+                if (req.file.originalname.endsWith(".xls") || req.file.originalname.endsWith(".xlsx")) {
+                    this.excelToJson((err) => callbackFailure(err), req.body, destinationFileName, req.body.fileName + '.json');
+                }
             });
         });
     }

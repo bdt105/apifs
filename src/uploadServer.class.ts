@@ -15,16 +15,16 @@ export class UploadServer {
         this.upload = upload;
     }
 
-    private excelToJson(excelFileName: string, jsonFileName: string) {
+    private excelToJson(callbackFailure: Function, config: any, excelFileName: string, jsonFileName: string) {
         let excelToJson = require('convert-excel-to-json');
 
         let result = excelToJson({
             sourceFile: excelFileName,
             sheets: [
                 {
-                    name: 'Mercalys',
+                    name: config.sheetName,
                     header: {
-                        rows: 7
+                        rows: config.headerRowNumber
                     }
                 }
             ],
@@ -35,11 +35,9 @@ export class UploadServer {
 
         var fs = require('fs');
         fs.writeFile(jsonFileName, JSON.stringify(result), (err: any) => {
-            if (err) {
-                return console.log(err);
+            if (callbackFailure) {
+                callbackFailure(err);
             }
-
-            console.log("The file was saved! - " + jsonFileName);
         });
     }
 
@@ -49,14 +47,16 @@ export class UploadServer {
             var fs = require('fs');
             let uploadDirectory = './' + this.myToolbox.getConfiguration().common.uploadDirectory + '/';
             let userDirectory = this.myToolbox.prepareStrinForSearch(req.body.email, false, false);
-            let destinationFileName = './' + userDirectory + '/original/' + req.file.originalname; 
+            let destinationFileName = './' + userDirectory + '/original/' + req.file.originalname;
             fs.rename(uploadDirectory + req.file.filename, destinationFileName, (err: any) => {
                 if (err) throw err;
-                res.send("file saved on server");
-                fs.stat('./upload/' + req.file.originalname, (err: any, stats: any) => {
+                let callbackFailure = (err: any) => {
                     if (err) throw err;
-                    console.log(`stats: ${JSON.stringify(stats)}`);
-                });
+                    res.send("file saved on server and turned into json");
+                }
+                if (req.file.originalname.endsWith(".xls") || req.file.originalname.endsWith(".xlsx")) {
+                    this.excelToJson((err: any) => callbackFailure(err), req.body, destinationFileName, req.body.fileName + '.json')
+                }
             });
         });
     }
