@@ -29,7 +29,7 @@ class FsServer {
         return ret;
     }
     truncData(data, offset, limit) {
-        if (offset > 0 && !Number.isNaN(limit)) {
+        if (!Number.isNaN(limit) && offset > 0) {
             data.splice(0, offset);
             data.splice(limit, data.length);
         }
@@ -38,13 +38,6 @@ class FsServer {
                 data.splice(limit, data.length);
             }
         }
-        // let ret = [];
-        // let off = data.length >= offset ? offset : 0;
-        // let max = data.length >= offset + limit ? offset + limit : data.length;
-        // for (var i = off; i < max; i++) {
-        //     ret.push(data[i]);
-        // }
-        // return ret;
     }
     truncFile(data, offset, limit, fileName, directory, searchParams) {
         let ret = data;
@@ -61,16 +54,21 @@ class FsServer {
                 }
                 if (dat && dat.length > 0) {
                     let originalLength = dat.length;
-                    let tab = this.truncData(dat, offset, limit);
+                    this.truncData(dat, offset, limit);
                     ret = this.formatResult(dat, originalLength, offset, limit, fileName, directory, searchParams);
                 }
                 else {
                     ret = null;
                 }
             }
+            else {
+                ret = dat;
+            }
         }
         else {
-            ret = data.substr(offset, limit);
+            if (!Number.isNaN(limit) && !Number.isNaN(offset)) {
+                ret = data.substr(offset, limit);
+            }
         }
         return ret;
     }
@@ -104,7 +102,7 @@ class FsServer {
                 return;
             }
             let fs = require('fs');
-            let path = (fileName ? directory + '/' + fileName + '.json' : directory);
+            let path = (fileName ? directory + '/' + fileName : directory);
             if (fs.existsSync(path)) {
                 if (fileName) {
                     fs.readFile(path, 'utf8', (err, data) => {
@@ -114,22 +112,22 @@ class FsServer {
                         }
                         else {
                             let oi = this.myToolbox.getFileOriginalInformation(fileName, directory);
-                            let sheet = (oi && oi.configuration && oi.configuration.sheetName) ?
-                                oi.configuration.sheetName : "sheet1";
-                            data = data.replace('{"' + sheet + '":[', '[').replace("]}", "]");
-                            response.status(200);
-                            response.setHeader('content-type', 'application/json');
-                            if ((offset != null && limit != null) || searchParams) {
-                                let ret = this.truncFile(data, offset, limit, fileName, directory, searchParams);
-                                if (!ret) {
-                                    response.status(404);
-                                }
-                                response.send(ret);
+                            let sheet = (oi && oi.sheetName) ?
+                                oi.sheetName : "";
+                            if (sheet) {
+                                data = data.replace('{"' + sheet + '":[', '[').replace("]}", "]");
+                            }
+                            let ret = this.truncFile(data, offset, limit, fileName, directory, searchParams);
+                            if (!ret) {
+                                response.status(404);
                             }
                             else {
-                                let resu = this.formatResult(data, data, offset, limit, fileName, directory, searchParams);
-                                response.send(resu);
+                                response.status(200);
+                                if (this.myToolbox.isJson(ret)) {
+                                    response.setHeader('content-type', 'application/json');
+                                }
                             }
+                            response.send(ret);
                         }
                     });
                 }

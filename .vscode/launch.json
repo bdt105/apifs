@@ -9,8 +9,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Lancer le programme",
+            "name": "Lancer le programme upload",
             "program": "${workspaceRoot}/build/uploadServer.js",
+            "cwd": "${workspaceRoot}/build/",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/build/**/*.js"
+            ],
+            "runtimeArgs": ["--nolazy"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Lancer le programme api",
+            "program": "${workspaceRoot}/build/apiServer.js",
             "cwd": "${workspaceRoot}/build/",
             "sourceMaps": true,
             "outFiles": [

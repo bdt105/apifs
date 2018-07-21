@@ -36,19 +36,18 @@ class MyToolbox extends dist_1.Toolbox {
         }
     }
     getFileOriginalInformation(fileName, directory) {
-        let ret = {};
-        if (this.getConfiguration().originalFileInformation) {
-            for (var i = 0; i < this.getConfiguration().originalFileInformation.length; i++) {
-                if (this.getConfiguration().originalFileInformation[i].directory == directory &&
-                    this.getConfiguration().originalFileInformation[i].fileName == fileName) {
-                    ret = this.getConfiguration().originalFileInformation[i];
-                }
-            }
+        let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
+        let fs = require('fs');
+        if (fs.existsSync(configurationFileName)) {
+            let cont = this.loadFromJsonFile(configurationFileName);
+            cont = this.parseJson(cont);
+            return cont;
         }
-        return ret;
+        return null;
     }
     isUserAllowed(email) {
-        let allowedUsers = this.configuration.allowedUsers;
+        let allowedUsers = this.getConfiguration().allowedUsers;
         let temp = this.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
         return temp.length > 0;
     }
