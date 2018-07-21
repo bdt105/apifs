@@ -1,17 +1,16 @@
 import { Connexion, Token } from 'bdt105connexion/dist';
 import { MyToolbox } from './myToolbox';
 import { isObject } from 'util';
+import { fstatSync } from 'fs';
 
 export class FsServer {
     private app: any;
     private connexion: Connexion;
-    private configuration: any;
     private myToolbox = new MyToolbox();
 
-    constructor(app: any, connexion: Connexion, configuration: any) {
+    constructor(app: any, connexion: Connexion) {
         this.app = app;
         this.connexion = connexion;
-        this.configuration = configuration;
     }
 
     public prepareStrinForSearch(text: string, caseSensitive: boolean, accentSensitive: boolean) {
@@ -79,6 +78,28 @@ export class FsServer {
         return ret;
     }
 
+    private addDataTofiles(files: any, directory: string) {
+        let ret: any = [];
+        if (files && Array.isArray(files)) {
+            for (var i = 0; i < files.length; i++) {
+                let f = this.myToolbox.getFileNameWithoutExtension(files[i]);
+                let configurationFileName = f + '.configuration.json';
+                let plusFileName = f + '.plus.json';
+                let fs = require('fs');
+                let fstat = fs.statSync(directory + '/' + files[i]);
+                let file = {
+                    "directory": directory,
+                    "originalFileName": files[i],
+                    "fileName": f + '.json',
+                    "configurationFileName": configurationFileName,
+                    "plusFileName": plusFileName,
+                    "stat": fstat
+                };
+                ret.push(file);
+            }
+        }
+        return ret;
+    }
     public assign() {
         this.app.get('/', (request: any, response: any) => {
             response.send('API Serveur File System is running');
@@ -139,9 +160,10 @@ export class FsServer {
                     fs.readdir(directory, (err: any, files: any) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        let originalLength = files.length;
-                        let resu = this.truncData(files, offset, limit);
-                        let extra = this.formatResult(files, originalLength, offset, limit, fileName, directory, searchParams);
+                        let ret = this.addDataTofiles(files, directory);
+                        let originalLength = ret.length;
+                        this.truncData(ret, offset, limit);
+                        let extra = this.formatResult(ret, originalLength, offset, limit, fileName, directory, searchParams);
                         response.send(extra);
                     });
                 }

@@ -8,7 +8,7 @@ export class MyToolbox extends Toolbox {
         super();
     }
 
-    private loadConfiguration(){
+    private loadConfiguration() {
         let fileConfiguration = this.loadFromJsonFile("./fileConfiguration.json");
         this.configuration = this.loadFromJsonFile("./configuration.json");
         this.configuration.originalFileInformation = fileConfiguration;
@@ -20,8 +20,8 @@ export class MyToolbox extends Toolbox {
         }
     }
 
-    getConfiguration(){
-        if (!this.configuration){
+    getConfiguration() {
+        if (!this.configuration) {
             this.loadConfiguration();
         }
         return this.configuration;
@@ -41,17 +41,19 @@ export class MyToolbox extends Toolbox {
     }
 
     getFileOriginalInformation(fileName: string, directory: string) {
-        let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-        let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
-        let fs = require('fs');
-        if (fs.existsSync(configurationFileName)) {
-            let cont = this.loadFromJsonFile(configurationFileName);
-            cont = this.parseJson(cont);
-            return cont;
+        if (fileName) {
+            let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+            let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
+            let fs = require('fs');
+            if (fs.existsSync(configurationFileName)) {
+                let cont = this.loadFromJsonFile(configurationFileName);
+                cont = this.parseJson(cont);
+                return cont;
+            }
         }
         return null;
-    }  
-    
+    }
+
     isUserAllowed(email: string) {
         let allowedUsers = this.getConfiguration().allowedUsers
         let temp = this.filterArrayOfObjects(allowedUsers, "email", email, false, false, true, false);
@@ -83,5 +85,5 @@ export class MyToolbox extends Toolbox {
             }
         }
         return true;
-    }    
+    }
 }

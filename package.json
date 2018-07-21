@@ -6,7 +6,7 @@
         "@types/express": "^4.11.1",
         "bcryptjs": "^2.4.3",
         "bdt105connexion": "^1.0.19",
-        "bdt105toolbox": "^1.0.101",
+        "bdt105toolbox": "^1.0.102",
         "body-parser": "^1.18.2",
         "convert-excel-to-json": "^1.4.0",
         "express": "^4.16.2",

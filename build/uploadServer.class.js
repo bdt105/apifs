@@ -59,7 +59,7 @@ class UploadServer {
             let uploadDirectory = './' + this.myToolbox.getConfiguration().common.uploadDirectory + '/';
             let userDirectory = this.myToolbox.prepareStrinForSearch(req.body.email, false, false);
             let destinationFileName = './' + userDirectory + '/original/' + req.file.originalname;
-            let fileNameWithoutExt = req.file.originalname.substring(0, req.file.originalname.lastIndexOf('.'));
+            let fileNameWithoutExt = this.myToolbox.getFileNameWithoutExtension(req.file.originalname);
             fs.rename(uploadDirectory + req.file.filename, destinationFileName, (err) => {
                 if (err)
                     throw err;

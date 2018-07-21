@@ -3,11 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const myToolbox_1 = require("./myToolbox");
 const util_1 = require("util");
 class FsServer {
-    constructor(app, connexion, configuration) {
+    constructor(app, connexion) {
         this.myToolbox = new myToolbox_1.MyToolbox();
         this.app = app;
         this.connexion = connexion;
-        this.configuration = configuration;
     }
     prepareStrinForSearch(text, caseSensitive, accentSensitive) {
         let t = text;
@@ -68,6 +67,28 @@ class FsServer {
         else {
             if (!Number.isNaN(limit) && !Number.isNaN(offset)) {
                 ret = data.substr(offset, limit);
+            }
+        }
+        return ret;
+    }
+    addDataTofiles(files, directory) {
+        let ret = [];
+        if (files && Array.isArray(files)) {
+            for (var i = 0; i < files.length; i++) {
+                let f = this.myToolbox.getFileNameWithoutExtension(files[i]);
+                let configurationFileName = f + '.configuration.json';
+                let plusFileName = f + '.plus.json';
+                let fs = require('fs');
+                let fstat = fs.statSync(directory + '/' + files[i]);
+                let file = {
+                    "directory": directory,
+                    "originalFileName": files[i],
+                    "fileName": f + '.json',
+                    "configurationFileName": configurationFileName,
+                    "plusFileName": plusFileName,
+                    "stat": fstat
+                };
+                ret.push(file);
             }
         }
         return ret;
@@ -135,9 +156,10 @@ class FsServer {
                     fs.readdir(directory, (err, files) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
-                        let originalLength = files.length;
-                        let resu = this.truncData(files, offset, limit);
-                        let extra = this.formatResult(files, originalLength, offset, limit, fileName, directory, searchParams);
+                        let ret = this.addDataTofiles(files, directory);
+                        let originalLength = ret.length;
+                        this.truncData(ret, offset, limit);
+                        let extra = this.formatResult(ret, originalLength, offset, limit, fileName, directory, searchParams);
                         response.send(extra);
                     });
                 }

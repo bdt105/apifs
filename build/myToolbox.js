@@ -36,13 +36,15 @@ class MyToolbox extends dist_1.Toolbox {
         }
     }
     getFileOriginalInformation(fileName, directory) {
-        let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-        let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
-        let fs = require('fs');
-        if (fs.existsSync(configurationFileName)) {
-            let cont = this.loadFromJsonFile(configurationFileName);
-            cont = this.parseJson(cont);
-            return cont;
+        if (fileName) {
+            let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+            let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
+            let fs = require('fs');
+            if (fs.existsSync(configurationFileName)) {
+                let cont = this.loadFromJsonFile(configurationFileName);
+                cont = this.parseJson(cont);
+                return cont;
+            }
         }
         return null;
     }
