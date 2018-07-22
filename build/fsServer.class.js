@@ -84,6 +84,19 @@ class FsServer {
         }
         return ret;
     }
+    deleteFile(directory, fileName) {
+        let ret = null;
+        let fs = require('fs');
+        let path = directory + '/' + fileName;
+        if (fs.existsSync(path)) {
+            let r = fs.unlinkSync(path);
+            ret = this.myToolbox.message("file " + path + " deleted");
+        }
+        else {
+            ret = this.myToolbox.errorMessage("file " + path + " does not exist");
+        }
+        return ret;
+    }
     assign() {
         this.app.get('/', (request, response) => {
             response.send('API Serveur File System is running');
@@ -194,25 +207,17 @@ class FsServer {
                 return;
             let directory = request.body.directory;
             let fileName = request.body.fileName;
-            let fs = require('fs');
-            let path = directory + '/' + fileName;
-            if (fs.existsSync(path)) {
-                fs.unlink(path, (err) => {
-                    if (err) {
-                        response.status(404);
-                        response.send(JSON.stringify(this.myToolbox.errorMessage(err)));
-                    }
-                    else {
-                        response.status(200);
-                        response.setHeader('content-type', 'application/json');
-                        response.send(this.myToolbox.message("file " + path + " deleted"));
-                    }
-                });
-            }
-            else {
-                response.status(404);
-                response.send(JSON.stringify(this.myToolbox.errorMessage("file " + path + " does not exist")));
-            }
+            let originalFileName = request.body.originalFileName;
+            let configurationFileName = request.body.configurationFileName;
+            let plusFileName = request.body.plusFileName;
+            let ret = [];
+            ret.push(this.deleteFile(directory, fileName));
+            ret.push(this.deleteFile(directory + '/original', originalFileName));
+            ret.push(this.deleteFile(directory, configurationFileName));
+            ret.push(this.deleteFile(directory, plusFileName));
+            response.status(200);
+            response.setHeader('content-type', 'application/json');
+            response.send(ret);
         });
         this.app.patch('/', upload.array(), (request, response) => {
             if (!this.myToolbox.checkToken(this.connexion, request.body.token, response))
