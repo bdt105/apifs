@@ -3,20 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const myToolbox_1 = require("./myToolbox");
 const util_1 = require("util");
 class FsServer {
-    constructor(app, connexion) {
+    constructor(app, connexion, configuration) {
         this.myToolbox = new myToolbox_1.MyToolbox();
         this.app = app;
         this.connexion = connexion;
-    }
-    prepareStrinForSearch(text, caseSensitive, accentSensitive) {
-        let t = text;
-        if (!accentSensitive) {
-            t = this.myToolbox.noAccent(t);
-        }
-        if (!caseSensitive) {
-            t = t.toUpperCase();
-        }
-        return t;
+        this.configuration = configuration;
     }
     formatResult(data, originalLength, offset, limit, fileName, directory, searchParams) {
         let fileConfiguration = this.myToolbox.getFileOriginalInformation(fileName, directory);

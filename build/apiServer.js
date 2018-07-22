@@ -26,7 +26,7 @@ if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration(
 }
 // No access to database only check if token is ok
 var c = new dist_1.Connexion(null, jwtConfiguration);
-let vm = new fsServer_class_1.FsServer(app, c);
+let vm = new fsServer_class_1.FsServer(app, c, myToolbox.getConfiguration());
 vm.assign();
 app.listen(port);
 myToolbox.logg("Listening file system on port " + port.toString());

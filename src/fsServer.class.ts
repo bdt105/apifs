@@ -1,27 +1,17 @@
-import { Connexion, Token } from 'bdt105connexion/dist';
+import { Connexion } from 'bdt105connexion/dist';
 import { MyToolbox } from './myToolbox';
 import { isObject } from 'util';
-import { fstatSync } from 'fs';
 
 export class FsServer {
     private app: any;
     private connexion: Connexion;
+    private configuration: any;
     private myToolbox = new MyToolbox();
 
-    constructor(app: any, connexion: Connexion) {
+    constructor(app: any, connexion: Connexion, configuration: any) {
         this.app = app;
         this.connexion = connexion;
-    }
-
-    public prepareStrinForSearch(text: string, caseSensitive: boolean, accentSensitive: boolean) {
-        let t: string = text;
-        if (!accentSensitive) {
-            t = this.myToolbox.noAccent(t);
-        }
-        if (!caseSensitive) {
-            t = t.toUpperCase();
-        }
-        return t;
+        this.configuration = configuration;
     }
 
     private formatResult(data: any, originalLength: number, offset: number, limit: number, fileName: string, directory: string, searchParams: any) {
@@ -100,6 +90,7 @@ export class FsServer {
         }
         return ret;
     }
+
     public assign() {
         this.app.get('/', (request: any, response: any) => {
             response.send('API Serveur File System is running');

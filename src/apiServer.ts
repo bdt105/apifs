@@ -31,7 +31,7 @@ if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration(
 // No access to database only check if token is ok
 var c = new Connexion(null, jwtConfiguration);
 
-let vm = new FsServer(app, c);
+let vm = new FsServer(app, c, myToolbox.getConfiguration());
 vm.assign();
 
 app.listen(port);
