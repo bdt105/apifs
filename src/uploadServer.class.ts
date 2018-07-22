@@ -17,7 +17,7 @@ export class UploadServer {
 
     private excelToJson(callbackFailure: Function, config: any, excelFileName: string, jsonFileName: string) {
         let excelToJson = require('convert-excel-to-json');
-
+        console.log("Start Excel to json transformation");
         let result = excelToJson({
             sourceFile: excelFileName,
             sheets: [
@@ -33,8 +33,11 @@ export class UploadServer {
             }
         });
 
+        console.log("End of Excel to json transformation");
         var fs = require('fs');
+
         fs.writeFile(jsonFileName, JSON.stringify(result), (err: any) => {
+            console.log("Write of json file");
             if (callbackFailure) {
                 callbackFailure(err);
             }
@@ -72,18 +75,22 @@ export class UploadServer {
             console.log(req.file);
             var fs = require('fs');
             let uploadDirectory = './' + this.myToolbox.getConfiguration().common.uploadDirectory + '/';
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory);
+            }
+            let dataDirectory = this.myToolbox.getConfiguration().common.dataDirectory;
             let userDirectory = this.myToolbox.prepareStrinForSearch(req.body.email, false, false);
-            let destinationFileName = './' + userDirectory + '/original/' + req.file.originalname;
+            let destinationFileName = dataDirectory + '/' + userDirectory + '/original/' + req.file.originalname;
             let fileNameWithoutExt = this.myToolbox.getFileNameWithoutExtension(req.file.originalname);
             fs.rename(uploadDirectory + req.file.filename, destinationFileName, (err: any) => {
                 if (err) throw err;
                 let callbackFailure = (err: any) => {
                     if (err) throw err;
-                    this.writeConfiguration(fs, destinationFileName, req.file.originalname, userDirectory + '/' + fileNameWithoutExt + '.configuration.json', req.body);
+                    this.writeConfiguration(fs, destinationFileName, req.file.originalname, dataDirectory + '/' + userDirectory + '/' + fileNameWithoutExt + '.configuration.json', req.body);
                     res.send("file saved on server and turned into json");
                 }
                 if (req.file.originalname.endsWith(".xls") || req.file.originalname.endsWith(".xlsx")) {
-                    this.excelToJson((err: any) => callbackFailure(err), req.body, destinationFileName, userDirectory + "/" + fileNameWithoutExt + '.json')
+                    this.excelToJson((err: any) => callbackFailure(err), req.body, destinationFileName, dataDirectory + '/' + userDirectory + "/" + fileNameWithoutExt + '.json')
                 }
             });
 

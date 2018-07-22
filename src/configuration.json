@@ -5,7 +5,8 @@
         "logToFile": true,
         "logToConsole": true,
         "logFile": "authentification.log",
-        "uploadDirectory": "uploads"
+        "uploadDirectory": "uploads",
+        "dataDirectory": "/home/data/apifs"
     },
     "authentification": 
     {
