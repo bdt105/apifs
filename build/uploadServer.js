@@ -25,10 +25,10 @@ if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration(
     jwtConfiguration = new dist_1.JwtConfiguration(myToolbox.getConfiguration().authentification.secret, "", "", "");
 }
 // No access to database only check if token is ok
-var c = new dist_1.Connexion(null, jwtConfiguration);
+var conn = new dist_1.Connexion(myToolbox.getConfiguration().mySql, jwtConfiguration);
 var multer = require('multer');
 var upload = multer({ dest: myToolbox.getConfiguration().common.uploadDirectory });
-let us = new uploadServer_class_1.UploadServer(app, upload, c, myToolbox.getConfiguration());
+let us = new uploadServer_class_1.UploadServer(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 app.listen(port);
 myToolbox.logg("Listening upload on port " + port.toString());

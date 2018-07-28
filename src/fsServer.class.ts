@@ -76,7 +76,7 @@ export class FsServer {
                 let configurationFileName = f + '.configuration.json';
                 let plusFileName = f + '.plus.json';
                 let fs = require('fs');
-                let fstat = fs.statSync(directory + '/' + files[i]);
+                let fstat = fs.statSync(this.myToolbox.getDataDirectory(directory) + '/' + files[i]);
                 let file = {
                     "directory": directory,
                     "originalFileName": files[i],
@@ -94,7 +94,7 @@ export class FsServer {
     private deleteFile(directory: string, fileName: string) {
         let ret = null;
         let fs = require('fs');
-        let path = directory + '/' + fileName;
+        let path = this.myToolbox.getDataDirectory(directory) + '/' + fileName;
         if (fs.existsSync(path)) {
             let r = fs.unlinkSync(path);
             ret = this.myToolbox.message("file " + path + " deleted");
@@ -134,7 +134,7 @@ export class FsServer {
                 return;
             }
             let fs = require('fs');
-            let path = (fileName ? directory + '/' + fileName : directory);
+            let path = (fileName ? this.myToolbox.getDataDirectory(directory) + '/' + fileName : this.myToolbox.getDataDirectory(directory));
             if (fs.existsSync(path)) {
                 if (fileName) {
                     fs.readFile(path, 'utf8', (err: any, data: any) => {
@@ -142,12 +142,6 @@ export class FsServer {
                             response.status(404);
                             response.send(JSON.stringify(this.myToolbox.errorMessage(err)));
                         } else {
-                            let oi = this.myToolbox.getFileOriginalInformation(fileName, directory);
-                            let sheet = (oi && oi.sheetName) ?
-                                oi.sheetName : "";
-                            if (sheet) {
-                                data = data.replace('{"' + sheet + '":[', '[').replace("]}", "]");
-                            }
                             let ret = this.truncFile(data, offset, limit, fileName, directory, searchParams);
                             if (!ret) {
                                 response.status(404);
@@ -161,7 +155,7 @@ export class FsServer {
                         }
                     });
                 } else {
-                    fs.readdir(directory, (err: any, files: any) => {
+                    fs.readdir(this.myToolbox.getDataDirectory(directory), (err: any, files: any) => {
                         response.status(200);
                         response.setHeader('content-type', 'application/json');
                         let ret = this.addDataTofiles(files, directory);
@@ -179,7 +173,7 @@ export class FsServer {
 
         this.app.put('/', upload.array(), (request: any, response: any) => {
             if (!this.myToolbox.checkToken(this.connexion, request.body.token, response)) return;
-            let directory = request.body.directory;
+            let directory = this.myToolbox.getDataDirectory(request.body.directory);
             let fileName = request.body.fileName;
             let content = request.body.content;
             let fs = require('fs');
@@ -200,13 +194,13 @@ export class FsServer {
                 });
             } else {
                 response.status(404);
-                response.send(JSON.stringify(this.myToolbox.errorMessage("directory " + directory + " does not exist")));
+                response.send(JSON.stringify(this.myToolbox.errorMessage("directory " + request.body.directory + " does not exist")));
             }
         });
 
         this.app.delete('/', upload.array(), (request: any, response: any) => {
             if (!this.myToolbox.checkToken(this.connexion, request.body.token, response)) return;
-            let directory = request.body.directory;
+            let directory = this.myToolbox.getDataDirectory(request.body.directory);
             let fileName = request.body.fileName;
             let originalFileName = request.body.originalFileName;
             let configurationFileName = request.body.configurationFileName;
@@ -224,7 +218,7 @@ export class FsServer {
 
         this.app.patch('/', upload.array(), (request: any, response: any) => {
             if (!this.myToolbox.checkToken(this.connexion, request.body.token, response)) return;
-            let directory = request.body.directory;
+            let directory = this.myToolbox.getDataDirectory(request.body.directory);
             let fileName = request.body.fileName;
             let content = request.body.content;
             let fs = require('fs');
@@ -242,7 +236,7 @@ export class FsServer {
                 });
             } else {
                 response.status(404);
-                response.send(JSON.stringify(this.myToolbox.errorMessage("file " + path + " does not exist")));
+                response.send(JSON.stringify(this.myToolbox.errorMessage("file " + request.body.directory + "/" + fileName + " does not exist")));
             }
         });
 
@@ -253,15 +247,6 @@ export class FsServer {
 
             // Do someting
         });
-
-        // this.app.post('/upload', this.upload.single('avatar'), function (req: any, res: any, next: any) {
-        //     var tmp_path = req.file.path;
-        //     // req.file is the `avatar` file
-        //     // req.body will hold the text fields, if there were any
-        //     console.log(req.body, 'body');
-        //     console.log(req.file, 'file');
-        //     res.end();
-        // });
 
     }
 

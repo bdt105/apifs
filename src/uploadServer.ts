@@ -29,11 +29,11 @@ if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration(
 }
 
 // No access to database only check if token is ok
-var c = new Connexion(null, jwtConfiguration);
+var conn = new Connexion(myToolbox.getConfiguration().mySql, jwtConfiguration);
 var multer = require('multer');
 var upload = multer({ dest: myToolbox.getConfiguration().common.uploadDirectory });
 
-let us = new UploadServer(app, upload, c, myToolbox.getConfiguration());
+let us = new UploadServer(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 
 app.listen(port);

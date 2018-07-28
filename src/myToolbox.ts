@@ -14,6 +14,10 @@ export class MyToolbox extends Toolbox {
         this.configuration.originalFileInformation = fileConfiguration;
     }
 
+    getDataDirectory(directory: string){
+        return this.configuration.common.dataDirectory + '/' + directory;
+    }
+
     logg(text: string) {
         if (this.configuration) {
             this.log(text, this.configuration.common.logFile, this.configuration.common.logToConsole);
@@ -43,7 +47,7 @@ export class MyToolbox extends Toolbox {
     getFileOriginalInformation(fileName: string, directory: string) {
         if (fileName) {
             let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-            let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
+            let configurationFileName = this.getDataDirectory(directory) + '/' + fileNameWithoutExt + ".configuration.json";
             let fs = require('fs');
             if (fs.existsSync(configurationFileName)) {
                 let cont = this.loadFromJsonFile(configurationFileName);

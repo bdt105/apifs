@@ -11,6 +11,9 @@ class MyToolbox extends dist_1.Toolbox {
         this.configuration = this.loadFromJsonFile("./configuration.json");
         this.configuration.originalFileInformation = fileConfiguration;
     }
+    getDataDirectory(directory) {
+        return this.configuration.common.dataDirectory + '/' + directory;
+    }
     logg(text) {
         if (this.configuration) {
             this.log(text, this.configuration.common.logFile, this.configuration.common.logToConsole);
@@ -38,7 +41,7 @@ class MyToolbox extends dist_1.Toolbox {
     getFileOriginalInformation(fileName, directory) {
         if (fileName) {
             let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
-            let configurationFileName = directory + '/' + fileNameWithoutExt + ".configuration.json";
+            let configurationFileName = this.getDataDirectory(directory) + '/' + fileNameWithoutExt + ".configuration.json";
             let fs = require('fs');
             if (fs.existsSync(configurationFileName)) {
                 let cont = this.loadFromJsonFile(configurationFileName);
