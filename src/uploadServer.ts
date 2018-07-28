@@ -37,5 +37,6 @@ let us = new UploadServer(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 
 app.listen(port);
+conn.tryConnectSql();
 
 myToolbox.logg("Listening upload on port " + port.toString());
