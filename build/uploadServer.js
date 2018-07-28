@@ -31,5 +31,6 @@ var upload = multer({ dest: myToolbox.getConfiguration().common.uploadDirectory 
 let us = new uploadServer_class_1.UploadServer(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 app.listen(port);
+conn.tryConnectSql();
 myToolbox.logg("Listening upload on port " + port.toString());
 //# sourceMappingURL=uploadServer.js.map
