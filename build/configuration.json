@@ -1,7 +1,7 @@
 {
     "common": {
-        "fileSystemApiPort": 4000,
-        "uploadApiPort": 8000,
+        "fileSystemApiPort": 3300,
+        "uploadApiPort": 3200,
         "logToFile": true,
         "logToConsole": true,
         "logFile": "authentification.log",
