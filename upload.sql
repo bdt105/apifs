@@ -40,6 +40,7 @@ CREATE TABLE `itemplus` (
   `active` int(1) DEFAULT NULL,
   `author` varchar(100) DEFAULT NULL,
   `tableName` varchar(100) NOT NULL,
+  `fileName` varchar(100) NOT NULL,
   PRIMARY KEY (`idItemplus`,`value`),
   UNIQUE KEY `iditemplus_UNIQUE` (`idItemplus`),
   KEY `idItem` (`itemRow`)

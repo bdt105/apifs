@@ -21,7 +21,8 @@ export class UploadServer {
     private escapeString(text: string) {
         if (text) {
             try {
-                return text.replace(/[\\$'"]/g, "\\$&");
+                let ret = text.replace(/[\\$'"]/g, "\\$&").replace(/[\n\r]+/g, ' ').replace(/[\n]+/g, ' ');
+                return ret;
             } catch (error) {
                 return text;
             }
@@ -32,7 +33,7 @@ export class UploadServer {
     private importCsvToTable(fileName: string) {
         this.myToolbox.log("Creation of table " + fileName);
 
-        let sql = "CREATE TABLE " + fileName +
+        let sql = "CREATE TABLE `" + fileName + "`" +
             " (`iditem` int(11) NOT NULL, " +
             "`col` varchar(5) NOT NULL, " +
             "`row` int(11) NOT NULL, " +
