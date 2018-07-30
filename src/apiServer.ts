@@ -13,6 +13,13 @@ let bodyParser = require('body-parser');
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 
+process.on('uncaughtException', function (err) {
+    console.error(err);
+    console.error("Node NOT Exiting...");
+    console.log(err);
+    console.log("Node NOT Exiting...");
+});
+
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*'); // Website you wish to allow to connect
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE'); // Request methods you wish to allow    
