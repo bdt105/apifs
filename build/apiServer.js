@@ -7,6 +7,7 @@ const dist_1 = require("bdt105connexion/dist");
 let app = express();
 let myToolbox = new myToolbox_1.MyToolbox();
 let port = myToolbox.getConfiguration().common.fileSystemApiPort;
+let configuration = myToolbox.loadFromJsonFile("configuration.json");
 // For POST-Support
 let bodyParser = require('body-parser');
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -27,12 +28,12 @@ app.use(function (req, res, next) {
 });
 // Only secret is needed bacause no token will be created here, only token check. Secret here must be the same as sender.
 let jwtConfiguration = null;
-if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration().authentification.active) {
-    jwtConfiguration = new dist_1.JwtConfiguration(myToolbox.getConfiguration().authentification.secret, "", "", "");
+if (configuration.authentification && configuration.authentification.active) {
+    jwtConfiguration = new dist_1.JwtConfiguration(configuration.authentification.secret, "", "", "");
 }
 // No access to database only check if token is ok
-var c = new dist_1.Connexion(null, jwtConfiguration);
-let vm = new fsServer_class_1.FsServer(app, c, myToolbox.getConfiguration());
+var c = new dist_1.Connexion(configuration.mySql, jwtConfiguration);
+let vm = new fsServer_class_1.FsServer(app, c, configuration);
 vm.assign();
 app.listen(port);
 myToolbox.logg("Listening file system on port " + port.toString());

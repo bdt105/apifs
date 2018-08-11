@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const myToolbox_1 = require("./myToolbox");
+const util_1 = require("util");
 class UploadServer {
     constructor(app, upload, connexion, configuration) {
         this.myToolbox = new myToolbox_1.MyToolbox();
@@ -10,6 +11,20 @@ class UploadServer {
         this.app = app;
         this.connexion = connexion;
         this.upload = upload;
+        this.configuration = configuration;
+    }
+    errorMessage(text) {
+        return { "status": "ERR", "message": text };
+    }
+    respond(response, statusCode, data = null) {
+        response.status(statusCode);
+        if (util_1.isObject(data)) {
+            response.setHeader('content-type', 'application/json');
+        }
+        else {
+            response.setHeader('content-type', 'test/plain');
+        }
+        response.send(JSON.stringify(data));
     }
     escapeString(text) {
         if (text) {
@@ -37,7 +52,7 @@ class UploadServer {
             "KEY `col` (`col`), " +
             "KEY `row` (`row`) " +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
-        let mysqlDirectory = this.myToolbox.getConfiguration().mySql.fileDirectory;
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
         this.connexion.querySql((error, data) => {
             if (!error) {
                 let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
@@ -67,8 +82,8 @@ class UploadServer {
         var fs = require('fs');
         var XLSX = require('xlsx');
         this.myToolbox.log("Start Excel parsing");
-        let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory + '/';
-        let mysqlDirectory = this.myToolbox.getConfiguration().mySql.fileDirectory + '/';
+        let uploadDirectory = this.configuration.common.uploadDirectory + '/';
+        let mysqlDirectory = this.configuration.mySql.fileDirectory + '/';
         var buf = fs.readFileSync(uploadDirectory + fileName);
         var wb = XLSX.read(buf, { type: 'buffer' });
         this.myToolbox.log("Excel parsing done");
@@ -106,6 +121,15 @@ class UploadServer {
             response.send('API Serveur Upload is running');
         });
         this.app.post('/upload', this.upload.single('file'), (req, res) => {
+            console.log("upload");
+            let token = req.body.token;
+            if (this.configuration.requiresToken) {
+                let authent = this.connexion.checkJwt(token);
+                if (!authent.decoded) {
+                    this.respond(res, 403, 'Token is absent or invalid');
+                    return;
+                }
+            }
             this.response = res;
             var fs = require('fs');
             let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory;
@@ -129,6 +153,40 @@ class UploadServer {
                     this.response.send(error);
                 }
             }, sql);
+        });
+        this.app.post('/uploadImage', this.upload.single('file'), (req, res) => {
+            console.log("uploadImage");
+            let token = req.body.token;
+            if (this.configuration.requiresToken) {
+                let authent = this.connexion.checkJwt(token);
+                if (!authent.decoded) {
+                    this.respond(res, 403, 'Token is absent or invalid');
+                    return;
+                }
+            }
+            this.response = res;
+            var fs = require('fs');
+            let imageDirectory = this.configuration.common.imageDirectory;
+            let imageUrlDirectory = this.configuration.common.imageUrlDirectory;
+            fs.renameSync(req.file.destination + req.file.filename, imageDirectory + req.file.filename);
+            this.respond(res, 200, { "status": "ok", "imageUrl": imageUrlDirectory + req.file.filename, "imageFileName": req.file.filename });
+        });
+        this.app.delete('/deleteImage', this.upload.array(), (request, response) => {
+            let token = request.body.token;
+            if (this.configuration.requiresToken) {
+                let authent = this.connexion.checkJwt(token);
+                if (!authent.decoded) {
+                    this.respond(response, 403, 'Token is absent or invalid');
+                    return;
+                }
+            }
+            let imageFileName = request.body.imageFileName;
+            var fs = require('fs');
+            let imageDirectory = this.configuration.common.imageDirectory;
+            if (fs.existsSync(imageDirectory + imageFileName)) {
+                let r = fs.unlinkSync(imageDirectory + imageFileName);
+            }
+            this.respond(response, 200, { "status": "ok" });
         });
     }
 }

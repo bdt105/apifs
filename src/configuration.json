@@ -5,7 +5,9 @@
         "logToFile": true,
         "logToConsole": true,
         "logFile": "authentification.log",
-        "uploadDirectory": "/home/bernard/uploads/"
+        "uploadDirectory": "/home/bernard/uploads/",
+        "imageDirectory": "/home/bernard/listing/",
+        "imageUrlDirectory": "/images"
     },
     "authentification": 
     {
