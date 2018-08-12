@@ -138,9 +138,9 @@ class UploadServer {
                 this.myToolbox.log("Upload directory created");
             }
             this.myToolbox.log("Creating the configuration data");
-            let sql = "insert into configuration (fileName, tableName, importantColumns, headerRowNumber, title, owner, isCurrent) values (" +
+            let sql = "insert into configuration (fileName, tableName, importantColumns, headerRowNumber, title, owner, isCurrent, keyColumn) values (" +
                 "'" + req.file.originalname + "', '" + req.file.filename + "', '" + req.body.importantColumns + "', " +
-                req.body.headerRowNumber + ", '" + req.body.title + "', '" + req.body.owner + "', 0)";
+                req.body.headerRowNumber + ", '" + req.body.title + "', '" + req.body.owner + "', 0,'" + req.body.keyColumn + "')";
             this.connexion.connectSql();
             this.connexion.querySqlWithoutConnexion((error, data) => {
                 if (!error) {
