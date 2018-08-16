@@ -8,9 +8,9 @@
         "uploadDirectory": "/home/bernard/uploads/",
         "imageDirectory": "/home/bernard/listing/",
         "imageUrlDirectory": "/images",
-        "email": "bdt105@gmail.com",
-        "password": "raphael772-",
-        "siteUrl": "http://vps563853.ovh.net/listing"
+        "email": "",
+        "password": "",
+        "siteUrl": ""
     },
     "authentification": 
     {
