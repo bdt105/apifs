@@ -8,6 +8,7 @@ class UploadServer {
         this.enclosed = "|";
         this.separator = ";";
         this.lineSeparator = "##";
+        this.uploadInfo = {};
         this.app = app;
         this.connexion = connexion;
         this.upload = upload;
@@ -26,17 +27,27 @@ class UploadServer {
         }
         response.send(JSON.stringify(data));
     }
-    escapeString(text) {
-        if (text) {
-            try {
-                let ret = text.replace(/[\\$'"]/g, "\\$&").replace(/[\n\r]+/g, ' ').replace(/[\n]+/g, ' ');
-                return ret;
+    sendEmail(sendTo, subject, html) {
+        var nodemailer = require('nodemailer');
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: this.configuration.common.email,
+                pass: this.configuration.common.password
             }
-            catch (error) {
-                return text;
-            }
-        }
-        return text;
+        });
+        const mailOptions = {
+            from: this.configuration.common.email,
+            to: sendTo,
+            subject: subject,
+            html: html // plain text body
+        };
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error)
+                console.log(error);
+            else
+                console.log(info);
+        });
     }
     importCsvToTable(fileName) {
         this.myToolbox.log("Creation of table " + fileName);
@@ -63,6 +74,9 @@ class UploadServer {
                 this.connexion.querySql((error, data) => {
                     if (!error) {
                         this.myToolbox.log("Import terminated with success");
+                        let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
+                            " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+                        this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
                         this.response.status(200);
                         this.response.send(data);
                     }
@@ -107,7 +121,7 @@ class UploadServer {
                     else {
                         l += this.separator + this.enclosed + 'value' + this.enclosed;
                     }
-                    l += this.separator + this.enclosed + this.escapeString(mySheet[key].w) + this.enclosed;
+                    l += this.separator + this.enclosed + this.myToolbox.escapeString(mySheet[key].w, true) + this.enclosed;
                     fs.appendFileSync(mysqlDirectory + fileName + '.csv', l + this.lineSeparator);
                     id += 1;
                 }
@@ -123,6 +137,7 @@ class UploadServer {
         this.app.post('/upload', this.upload.single('file'), (req, res) => {
             console.log("upload");
             let token = req.body.token;
+            this.uploadInfo = req;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
                 if (!authent.decoded) {

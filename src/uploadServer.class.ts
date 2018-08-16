@@ -14,6 +14,8 @@ export class UploadServer {
     private lineSeparator = "##";
     private configuration: any;
 
+    private uploadInfo: any = {};
+
     constructor(app: any, upload: any, connexion: Connexion, configuration: any) {
         this.app = app;
         this.connexion = connexion;
@@ -34,17 +36,28 @@ export class UploadServer {
         }
         response.send(JSON.stringify(data));
     }
-    
-    private escapeString(text: string) {
-        if (text) {
-            try {
-                let ret = text.replace(/[\\$'"]/g, "\\$&").replace(/[\n\r]+/g, ' ').replace(/[\n]+/g, ' ');
-                return ret;
-            } catch (error) {
-                return text;
+
+    protected sendEmail(sendTo: string, subject: string, html: string) {
+        var nodemailer = require('nodemailer')
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: this.configuration.common.email,
+                pass: this.configuration.common.password
             }
-        }
-        return text;
+        });
+        const mailOptions = {
+            from: this.configuration.common.email, // sender address
+            to: sendTo, // list of receivers
+            subject: subject, // Subject line
+            html: html // plain text body
+        };
+        transporter.sendMail(mailOptions, function (error: any, info: any) {
+            if (error)
+                console.log(error)
+            else
+                console.log(info);
+        });
     }
 
     private importCsvToTable(fileName: string) {
@@ -77,6 +90,9 @@ export class UploadServer {
                         (error: any, data: any) => {
                             if (!error) {
                                 this.myToolbox.log("Import terminated with success");
+                                let html =  "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows + 
+                                    " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+                                this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
                                 this.response.status(200);
                                 this.response.send(data);
                             } else {
@@ -124,7 +140,7 @@ export class UploadServer {
                     } else {
                         l += this.separator + this.enclosed + 'value' + this.enclosed;
                     }
-                    l += this.separator + this.enclosed + this.escapeString(mySheet[key].w) + this.enclosed;
+                    l += this.separator + this.enclosed + this.myToolbox.escapeString(mySheet[key].w, true) + this.enclosed;
                     fs.appendFileSync(mysqlDirectory + fileName + '.csv', l + this.lineSeparator);
                     id += 1;
                 }
@@ -142,6 +158,7 @@ export class UploadServer {
         this.app.post('/upload', this.upload.single('file'), (req: any, res: any) => {
             console.log("upload");
             let token = req.body.token;
+            this.uploadInfo = req;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
                 if (!authent.decoded) {
@@ -185,14 +202,14 @@ export class UploadServer {
                     this.respond(res, 403, 'Token is absent or invalid');
                     return;
                 }
-            }            
+            }
             this.response = res;
             var fs = require('fs');
             let imageDirectory = this.configuration.common.imageDirectory;
             let imageUrlDirectory = this.configuration.common.imageUrlDirectory;
 
             fs.renameSync(req.file.destination + req.file.filename, imageDirectory + req.file.filename);
-            this.respond(res, 200, {"status": "ok", "imageUrl": imageUrlDirectory + req.file.filename, "imageFileName": req.file.filename});
+            this.respond(res, 200, { "status": "ok", "imageUrl": imageUrlDirectory + req.file.filename, "imageFileName": req.file.filename });
         });
 
         this.app.delete('/deleteImage', this.upload.array(), (request: any, response: any) => {
@@ -203,7 +220,7 @@ export class UploadServer {
                     this.respond(response, 403, 'Token is absent or invalid');
                     return;
                 }
-            } 
+            }
             let imageFileName = request.body.imageFileName;
             var fs = require('fs');
             let imageDirectory = this.configuration.common.imageDirectory;
@@ -211,7 +228,7 @@ export class UploadServer {
             if (fs.existsSync(imageDirectory + imageFileName)) {
                 let r = fs.unlinkSync(imageDirectory + imageFileName);
             }
-            this.respond(response, 200, {"status": "ok"});
+            this.respond(response, 200, { "status": "ok" });
         });
 
     }

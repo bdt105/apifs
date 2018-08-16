@@ -6,8 +6,11 @@
         "logToConsole": true,
         "logFile": "authentification.log",
         "uploadDirectory": "/home/bernard/uploads/",
-        "imageDirectory": "/var/www/html/listingImages/",
-        "imageUrlDirectory": "http://192.168.1.160/listingImages/"
+        "imageDirectory": "/home/bernard/listing/",
+        "imageUrlDirectory": "/images",
+        "email": "bdt105@gmail.com",
+        "password": "raphael772-",
+        "siteUrl": "http://vps563853.ovh.net/listing"
     },
     "authentification": 
     {
