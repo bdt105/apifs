@@ -82,7 +82,7 @@ export class UploadServer {
             (error: any, data: any) => {
                 if (!error) {
                     let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
-                        "INTO TABLE `" + fileName + "` " +
+                        "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
                         "FIELDS TERMINATED BY '" + this.separator + "' " +
                         "ENCLOSED BY '" + this.enclosed + "' " +
                         "LINES TERMINATED BY '" + this.lineSeparator + "';"
