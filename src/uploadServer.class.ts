@@ -90,7 +90,7 @@ export class UploadServer {
                         (error: any, data: any) => {
                             if (!error) {
                                 this.myToolbox.log("Import terminated with success");
-                                let html =  "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows + 
+                                let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
                                     " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
                                 this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
                                 this.response.status(200);
@@ -107,6 +107,64 @@ export class UploadServer {
             }, sql);
     }
 
+    private createCreateAndImportTable(lines: any, rowStartCount: number, fileName: string) {
+        let headers = lines[rowStartCount];
+        let head = Object.keys(headers);
+        let create = "CREATE TABLE `" + fileName + "` (`row` int(11), `type` varchar(10)";
+        for (var i = 0; i < head.length; i++) {
+            create += ", `" + head[i] + "` varchar(300)"
+        }
+        create += ", PRIMARY KEY (`row`)) ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
+
+        let rows = Object.keys(lines);
+        var fs = require('fs');
+
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
+
+        if (fs.existsSync(mysqlDirectory + fileName + '.csv')) {
+            fs.unlinkSync(mysqlDirectory + fileName + '.csv');
+        }
+
+        for (var r = 0; r < rows.length; r++) {
+            var l = this.enclosed + rows[r] + this.enclosed + this.separator + this.enclosed + (rows[r] == rowStartCount + "" ? "header" : "row") + this.enclosed;
+            for (var c = 0; c < head.length; c++) {
+                let value = lines[rows[r]][head[c]];
+                l += this.separator + this.enclosed + (value ? value : "") + this.enclosed;
+            }
+            fs.appendFileSync(mysqlDirectory + fileName + '.csv', l + this.lineSeparator);
+        }
+
+        this.connexion.querySql(
+            (error: any, data: any) => {
+                if (!error) {
+                    let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
+                        "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
+                        "FIELDS TERMINATED BY '" + this.separator + "' " +
+                        "ENCLOSED BY '" + this.enclosed + "' " +
+                        "LINES TERMINATED BY '" + this.lineSeparator + "';"
+                    this.connexion.querySql(
+                        (error: any, data: any) => {
+                            if (!error) {
+                                this.myToolbox.log("Import terminated with success");
+                                let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
+                                    " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+                                this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
+                                this.response.status(200);
+                                this.response.send(data);
+                            } else {
+                                this.response.status(500);
+                                this.response.send(error);
+                            }
+                        }, sql)
+                } else {
+                    this.response.status(500);
+                    this.response.send(error);
+                }
+            }, create);
+
+        return create;
+    }
+
     private testExcel(fileName: string, tableName: string, sheetName: string, rowStartCount: number) {
         var fs = require('fs');
         var XLSX = require('xlsx');
@@ -119,15 +177,11 @@ export class UploadServer {
         var wb = XLSX.read(buf, { type: 'buffer' });
         this.myToolbox.log("Excel parsing done");
 
-
-        if (fs.existsSync(mysqlDirectory + fileName + '.csv')) {
-            fs.unlinkSync(mysqlDirectory + fileName + '.csv');
-        }
-
         this.myToolbox.log("Start Excel to csv process");
         if (wb) {
             let mySheet = wb.Sheets[sheetName];
             let id = 0;
+            let ret: any = {};
             for (var key in mySheet) {
                 let column = key.replace(/[0-9]/g, '');
                 let row = Number.parseInt(key.replace(/[^0-9]/g, ''));
@@ -141,12 +195,28 @@ export class UploadServer {
                         l += this.separator + this.enclosed + 'value' + this.enclosed;
                     }
                     l += this.separator + this.enclosed + this.myToolbox.escapeString(mySheet[key].w, true) + this.enclosed;
-                    fs.appendFileSync(mysqlDirectory + fileName + '.csv', l + this.lineSeparator);
                     id += 1;
+                    if (!ret[row]) {
+                        ret[row] = [];
+                    }
+                    ret[row][column] = this.myToolbox.escapeString(mySheet[key].w, true);
                 }
             }
-            this.myToolbox.log("Excel to csv process done!");
-            this.importCsvToTable(fileName);
+            this.createCreateAndImportTable(ret, rowStartCount, fileName);
+
+            // this.myToolbox.log("Excel to csv process done!");
+            // this.importCsvToTable(fileName);
+        }
+    }
+
+    private deleteFiles(tableName: string) {
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
+
+        var fs = require('fs');
+
+        if (fs.existsSync(mysqlDirectory + tableName + '.csv')) {
+            this.myToolbox.log("CDelete file: " + tableName);
+            fs.unlinkSync(mysqlDirectory + tableName + '.csv');
         }
     }
 
@@ -174,7 +244,7 @@ export class UploadServer {
                 this.myToolbox.log("Upload directory created");
             }
 
-            this.myToolbox.log("Creating the configuration data");
+            this.myToolbox.log("Adding the configuration data");
             let sql = "insert into configuration (fileName, tableName, importantColumns, headerRowNumber, title, owner, isCurrent, keyColumn) values (" +
                 "'" + req.file.originalname + "', '" + req.file.filename + "', '" + req.body.importantColumns + "', " +
                 req.body.headerRowNumber + ", '" + req.body.title + "', '" + req.body.owner + "', 0,'" + req.body.keyColumn + "')";
@@ -231,6 +301,38 @@ export class UploadServer {
             this.respond(response, 200, { "status": "ok" });
         });
 
+
+        this.app.delete('/delete', this.upload.array(), (request: any, response: any) => {
+            let token = request.body.token;
+            if (this.configuration.requiresToken) {
+                let authent = this.connexion.checkJwt(token);
+                if (!authent.decoded) {
+                    this.respond(response, 403, 'Token is absent or invalid');
+                    return;
+                }
+            }
+
+            this.myToolbox.log("Deleting the configuration data");
+            let sql = "delete from table configuration where tableName = '" + request.body.tableName + "';";
+            if (request.deleteItemPlus) {
+                sql += "delete from table itemplus where tableName = '" + request.body.tableName + "';";
+            }
+            sql += "DROP TABLE IF EXISTS `" + request.body.tableName + "`;"
+
+            this.connexion.connectSql();
+
+            this.connexion.querySqlWithoutConnexion(
+                (error: any, data: any) => {
+                    if (!error) {
+                        this.connexion.releaseSql();
+                        this.myToolbox.log("Configuration data deleted: " + request.body.tableName);
+                        this.deleteFiles(request.body.tableName);
+                    } else {
+                        this.response.status(500);
+                        this.response.send(error);
+                    }
+                }, sql);
+        });
     }
 
 }
