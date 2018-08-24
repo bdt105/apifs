@@ -150,44 +150,59 @@ class UploadServer {
         let uploadDirectory = this.configuration.common.uploadDirectory + '/';
         let mysqlDirectory = this.configuration.mySql.fileDirectory + '/';
         var buf = fs.readFileSync(uploadDirectory + fileName);
-        var wb = XLSX.read(buf, { type: 'buffer' });
+        var wb = null;
+        try {
+            wb = XLSX.read(buf, { type: 'buffer' });
+        }
+        catch (error) {
+        }
         this.myToolbox.log("Excel parsing done");
         this.myToolbox.log("Start Excel to csv process");
         if (wb) {
             let mySheet = wb.Sheets[sheetName];
-            let id = 0;
-            let ret = {};
-            for (var key in mySheet) {
-                let column = key.replace(/[0-9]/g, '');
-                let row = Number.parseInt(key.replace(/[^0-9]/g, ''));
-                if (!Number.isNaN(row) && row >= rowStartCount) {
-                    let l = this.enclosed + id.toString() + this.enclosed;
-                    l += this.separator + this.enclosed + column + this.enclosed;
-                    l += this.separator + this.enclosed + row + this.enclosed;
-                    if (row == rowStartCount) {
-                        l += this.separator + this.enclosed + 'header' + this.enclosed;
+            if (mySheet) {
+                let id = 0;
+                let ret = {};
+                for (var key in mySheet) {
+                    let column = key.replace(/[0-9]/g, '');
+                    let row = Number.parseInt(key.replace(/[^0-9]/g, ''));
+                    if (!Number.isNaN(row) && row >= rowStartCount) {
+                        let l = this.enclosed + id.toString() + this.enclosed;
+                        l += this.separator + this.enclosed + column + this.enclosed;
+                        l += this.separator + this.enclosed + row + this.enclosed;
+                        if (row == rowStartCount) {
+                            l += this.separator + this.enclosed + 'header' + this.enclosed;
+                        }
+                        else {
+                            l += this.separator + this.enclosed + 'value' + this.enclosed;
+                        }
+                        l += this.separator + this.enclosed + this.myToolbox.escapeString(mySheet[key].w, true) + this.enclosed;
+                        id += 1;
+                        if (!ret[row]) {
+                            ret[row] = [];
+                        }
+                        ret[row][column] = this.myToolbox.escapeString(mySheet[key].w, true);
                     }
-                    else {
-                        l += this.separator + this.enclosed + 'value' + this.enclosed;
-                    }
-                    l += this.separator + this.enclosed + this.myToolbox.escapeString(mySheet[key].w, true) + this.enclosed;
-                    id += 1;
-                    if (!ret[row]) {
-                        ret[row] = [];
-                    }
-                    ret[row][column] = this.myToolbox.escapeString(mySheet[key].w, true);
                 }
+                this.createCreateAndImportTable(ret, rowStartCount, fileName);
             }
-            this.createCreateAndImportTable(ret, rowStartCount, fileName);
+            else {
+                this.response.status(415);
+                this.response.send({ "message": "Sheet not found" });
+            }
             // this.myToolbox.log("Excel to csv process done!");
             // this.importCsvToTable(fileName);
+        }
+        else {
+            this.response.status(415);
+            this.response.send({ "message": "Sheet not found" });
         }
     }
     deleteFiles(tableName) {
         let mysqlDirectory = this.configuration.mySql.fileDirectory;
         var fs = require('fs');
         if (fs.existsSync(mysqlDirectory + tableName + '.csv')) {
-            this.myToolbox.log("CDelete file: " + tableName);
+            this.myToolbox.log("Delete file: " + tableName);
             fs.unlinkSync(mysqlDirectory + tableName + '.csv');
         }
     }
