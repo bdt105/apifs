@@ -60,52 +60,52 @@ export class UploadServer {
         });
     }
 
-    private importCsvToTable(fileName: string) {
-        this.myToolbox.log("Creation of table " + fileName);
+    // private importCsvToTable(fileName: string) {
+    //     this.myToolbox.log("Creation of table " + fileName);
 
-        let sql = "CREATE TABLE `" + fileName + "`" +
-            " (`iditem` int(11) NOT NULL, " +
-            "`col` varchar(5) NOT NULL, " +
-            "`row` int(11) NOT NULL, " +
-            "`type` varchar(45) NOT NULL, " +
-            "`value` varchar(500) DEFAULT NULL, " +
-            "PRIMARY KEY (`iditem`), " +
-            "KEY `value` (`value`), " +
-            "KEY `type` (`type`), " +
-            "KEY `col` (`col`), " +
-            "KEY `row` (`row`) " +
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
+    //     let sql = "CREATE TABLE `" + fileName + "`" +
+    //         " (`iditem` int(11) NOT NULL, " +
+    //         "`col` varchar(5) NOT NULL, " +
+    //         "`row` int(11) NOT NULL, " +
+    //         "`type` varchar(45) NOT NULL, " +
+    //         "`value` varchar(500) DEFAULT NULL, " +
+    //         "PRIMARY KEY (`iditem`), " +
+    //         "KEY `value` (`value`), " +
+    //         "KEY `type` (`type`), " +
+    //         "KEY `col` (`col`), " +
+    //         "KEY `row` (`row`) " +
+    //         ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
 
-        let mysqlDirectory = this.configuration.mySql.fileDirectory;
+    //     let mysqlDirectory = this.configuration.mySql.fileDirectory;
 
-        this.connexion.querySql(
-            (error: any, data: any) => {
-                if (!error) {
-                    let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
-                        "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
-                        "FIELDS TERMINATED BY '" + this.separator + "' " +
-                        "ENCLOSED BY '" + this.enclosed + "' " +
-                        "LINES TERMINATED BY '" + this.lineSeparator + "';"
-                    this.connexion.querySql(
-                        (error: any, data: any) => {
-                            if (!error) {
-                                this.myToolbox.log("Import terminated with success");
-                                let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
-                                    " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
-                                this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
-                                this.response.status(200);
-                                this.response.send(data);
-                            } else {
-                                this.response.status(500);
-                                this.response.send(error);
-                            }
-                        }, sql)
-                } else {
-                    this.response.status(500);
-                    this.response.send(error);
-                }
-            }, sql);
-    }
+    //     this.connexion.querySql(
+    //         (error: any, data: any) => {
+    //             if (!error) {
+    //                 let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
+    //                     "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
+    //                     "FIELDS TERMINATED BY '" + this.separator + "' " +
+    //                     "ENCLOSED BY '" + this.enclosed + "' " +
+    //                     "LINES TERMINATED BY '" + this.lineSeparator + "';"
+    //                 this.connexion.querySql(
+    //                     (error: any, data: any) => {
+    //                         if (!error) {
+    //                             this.myToolbox.log("Import terminated with success");
+    //                             let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
+    //                                 " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+    //                             this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
+    //                             this.response.status(200);
+    //                             this.response.send(data);
+    //                         } else {
+    //                             this.response.status(500);
+    //                             this.response.send(error);
+    //                         }
+    //                     }, sql)
+    //             } else {
+    //                 this.response.status(500);
+    //                 this.response.send(error);
+    //             }
+    //         }, sql);
+    // }
 
     private createCreateAndImportTable(lines: any, rowStartCount: number, fileName: string) {
         let headers = lines[rowStartCount];
@@ -149,6 +149,11 @@ export class UploadServer {
                                 let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
                                     " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
                                 this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
+
+                                if (fs.existsSync(mysqlDirectory + fileName + '.csv')) {
+                                    fs.unlinkSync(mysqlDirectory + fileName + '.csv');
+                                }
+                                
                                 this.response.status(200);
                                 this.response.send(data);
                             } else {
@@ -171,7 +176,6 @@ export class UploadServer {
         this.myToolbox.log("Start Excel parsing");
 
         let uploadDirectory = this.configuration.common.uploadDirectory + '/';
-        let mysqlDirectory = this.configuration.mySql.fileDirectory + '/';
 
         var buf = fs.readFileSync(uploadDirectory + fileName);
         var wb = null;
@@ -213,10 +217,7 @@ export class UploadServer {
                 this.response.status(415);
                 this.response.send({ "message": "Sheet not found" });
             }
-
-            // this.myToolbox.log("Excel to csv process done!");
-            // this.importCsvToTable(fileName);
-        }else{
+        } else {
             this.response.status(415);
             this.response.send({ "message": "Sheet not found" });
         }
@@ -347,5 +348,4 @@ export class UploadServer {
                 }, sql);
         });
     }
-
 }
