@@ -23,11 +23,38 @@ export class UploadServer {
         this.configuration = configuration
     }
 
+    protected logMessage(message: any) {
+        if (this.configuration.common.logToConsole) {
+            if (isObject(message)) {
+                console.log(JSON.stringify(message));
+            } else {
+                console.log(message);
+            }
+        }
+    }
+
+    protected logError(error: any) {
+        if (this.configuration.common.logToConsole) {
+            if (isObject(error)) {
+                console.error(JSON.stringify(error));
+            } else {
+                console.error(error);
+            }
+        }
+    }
+
     protected errorMessage(text: string) {
-        return { "status": "ERR", "message": text };
+        let ret = { "status": "ERR", "message": text };
+        this.logError(ret);
+        return ret;
     }
 
     protected respond(response: any, statusCode: number, data: any = null) {
+        if (statusCode != 200) {
+            this.logError(data);
+        } else {
+            this.logMessage(data);
+        }
         response.status(statusCode);
         if (isObject(data)) {
             response.setHeader('content-type', 'application/json');
@@ -54,59 +81,60 @@ export class UploadServer {
         };
         transporter.sendMail(mailOptions, function (error: any, info: any) {
             if (error)
-                console.log(error)
+                this.logError(error)
             else
-                console.log(info);
+                this.logMessage(info);
         });
     }
-
-    // private importCsvToTable(fileName: string) {
-    //     this.myToolbox.log("Creation of table " + fileName);
-
-    //     let sql = "CREATE TABLE `" + fileName + "`" +
-    //         " (`iditem` int(11) NOT NULL, " +
-    //         "`col` varchar(5) NOT NULL, " +
-    //         "`row` int(11) NOT NULL, " +
-    //         "`type` varchar(45) NOT NULL, " +
-    //         "`value` varchar(500) DEFAULT NULL, " +
-    //         "PRIMARY KEY (`iditem`), " +
-    //         "KEY `value` (`value`), " +
-    //         "KEY `type` (`type`), " +
-    //         "KEY `col` (`col`), " +
-    //         "KEY `row` (`row`) " +
-    //         ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
-
-    //     let mysqlDirectory = this.configuration.mySql.fileDirectory;
-
-    //     this.connexion.querySql(
-    //         (error: any, data: any) => {
-    //             if (!error) {
-    //                 let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
-    //                     "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
-    //                     "FIELDS TERMINATED BY '" + this.separator + "' " +
-    //                     "ENCLOSED BY '" + this.enclosed + "' " +
-    //                     "LINES TERMINATED BY '" + this.lineSeparator + "';"
-    //                 this.connexion.querySql(
-    //                     (error: any, data: any) => {
-    //                         if (!error) {
-    //                             this.myToolbox.log("Import terminated with success");
-    //                             let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
-    //                                 " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
-    //                             this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
-    //                             this.response.status(200);
-    //                             this.response.send(data);
-    //                         } else {
-    //                             this.response.status(500);
-    //                             this.response.send(error);
-    //                         }
-    //                     }, sql)
-    //             } else {
-    //                 this.response.status(500);
-    //                 this.response.send(error);
-    //             }
-    //         }, sql);
-    // }
-
+    /*
+        // private importCsvToTable(fileName: string) {
+        //     this.myToolbox.log("Creation of table " + fileName);
+    
+        //     let sql = "CREATE TABLE `" + fileName + "`" +
+        //         " (`iditem` int(11) NOT NULL, " +
+        //         "`col` varchar(5) NOT NULL, " +
+        //         "`row` int(11) NOT NULL, " +
+        //         "`type` varchar(45) NOT NULL, " +
+        //         "`value` varchar(500) DEFAULT NULL, " +
+        //         "PRIMARY KEY (`iditem`), " +
+        //         "KEY `value` (`value`), " +
+        //         "KEY `type` (`type`), " +
+        //         "KEY `col` (`col`), " +
+        //         "KEY `row` (`row`) " +
+        //         ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
+    
+        //     let mysqlDirectory = this.configuration.mySql.fileDirectory;
+    
+        //     this.connexion.querySql(
+        //         (error: any, data: any) => {
+        //             if (!error) {
+        //                 let sql = "LOAD DATA INFILE '" + mysqlDirectory + fileName + ".csv' " +
+        //                     "INTO TABLE `" + fileName + "` CHARACTER SET utf8 " +
+        //                     "FIELDS TERMINATED BY '" + this.separator + "' " +
+        //                     "ENCLOSED BY '" + this.enclosed + "' " +
+        //                     "LINES TERMINATED BY '" + this.lineSeparator + "';"
+        //                 this.connexion.querySql(
+        //                     (error: any, data: any) => {
+        //                         if (!error) {
+        //                             this.myToolbox.log("Import terminated with success");
+        //                             let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
+        //                                 " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+        //                             this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
+        //                             this.response.status(200);
+        //                             this.response.send(data);
+        //                         } else {
+        //                             this.response.status(500);
+        //                             this.response.send(error);
+        //                         }
+        //                     }, sql)
+        //             } else {
+        //                 this.response.status(500);
+        //                 this.response.send(error);
+        //             }
+        //         }, sql);
+        // }
+    */
+    
     private createCreateAndImportTable(lines: any, rowStartCount: number, fileName: string) {
         let headers = lines[rowStartCount];
         let head = Object.keys(headers);
@@ -153,17 +181,13 @@ export class UploadServer {
                                 if (fs.existsSync(mysqlDirectory + fileName + '.csv')) {
                                     fs.unlinkSync(mysqlDirectory + fileName + '.csv');
                                 }
-                                
-                                this.response.status(200);
-                                this.response.send(data);
+                                this.respond(this.response, 200, data);
                             } else {
-                                this.response.status(500);
-                                this.response.send(error);
+                                this.respond(this.response, 500, error);
                             }
                         }, sql)
                 } else {
-                    this.response.status(500);
-                    this.response.send(error);
+                    this.respond(this.response, 500, error);
                 }
             }, create);
 
@@ -214,12 +238,10 @@ export class UploadServer {
                 }
                 this.createCreateAndImportTable(ret, rowStartCount, fileName);
             } else {
-                this.response.status(415);
-                this.response.send({ "message": "Sheet not found" });
+                this.respond(this.response, 415, { "message": "Sheet not found" });
             }
         } else {
-            this.response.status(415);
-            this.response.send({ "message": "Sheet not found" });
+            this.respond(this.response, 415, { "message": "Sheet not found" });
         }
     }
 
@@ -229,8 +251,8 @@ export class UploadServer {
         var fs = require('fs');
 
         if (fs.existsSync(mysqlDirectory + tableName + '.csv')) {
-            this.myToolbox.log("Delete file: " + tableName);
             fs.unlinkSync(mysqlDirectory + tableName + '.csv');
+            this.logMessage("File deleted: " + mysqlDirectory + tableName + '.csv')
         }
     }
 
@@ -255,7 +277,7 @@ export class UploadServer {
             let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory;
             if (!fs.existsSync(uploadDirectory)) {
                 fs.mkdirSync(uploadDirectory);
-                this.myToolbox.log("Upload directory created");
+                this.logMessage("Upload directory created");
             }
 
             this.myToolbox.log("Adding the configuration data");
@@ -268,11 +290,10 @@ export class UploadServer {
                 (error: any, data: any) => {
                     if (!error) {
                         this.connexion.releaseSql();
-                        this.myToolbox.log("Configuration data created");
+                        this.logMessage("Configuration data created");
                         this.testExcel(req.file.filename, req.file.originalname, req.body.sheetName, req.body.headerRowNumber);
                     } else {
-                        this.response.status(500);
-                        this.response.send(error);
+                        this.respond(this.response, 500, error);
                     }
                 }, sql);
         });
@@ -293,7 +314,8 @@ export class UploadServer {
             let imageUrlDirectory = this.configuration.common.imageUrlDirectory;
 
             fs.renameSync(req.file.destination + req.file.filename, imageDirectory + req.file.filename);
-            this.respond(res, 200, { "status": "ok", "imageUrl": imageUrlDirectory + req.file.filename, "imageFileName": req.file.filename });
+            let mes = { "status": "ok", "imageUrl": imageUrlDirectory + req.file.filename, "imageFileName": req.file.filename };
+            this.respond(res, 200, mes);
         });
 
         this.app.delete('/deleteImage', this.upload.array(), (request: any, response: any) => {
@@ -339,7 +361,7 @@ export class UploadServer {
                 (error: any, data: any) => {
                     if (!error) {
                         this.connexion.releaseSql();
-                        this.myToolbox.log("Configuration data deleted: " + request.body.tableName);
+                        this.logMessage("Configuration data deleted: " + request.body.tableName);
                         this.deleteFiles(request.body.tableName);
                     } else {
                         this.response.status(500);
