@@ -70,7 +70,7 @@ class UploadServer {
             subject: subject,
             html: html // plain text body
         };
-        transporter.sendMail(mailOptions, function (error, info) {
+        transporter.sendMail(mailOptions, (error, info) => {
             if (error)
                 this.logError(error);
             else
