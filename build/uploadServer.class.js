@@ -130,7 +130,7 @@ class UploadServer {
     createAndImportTable(lines) {
         let headers = lines[this.uploadInfo.params.headerRowNumber];
         let head = Object.keys(headers);
-        let create = "CREATE TABLE `" + this.uploadInfo.file.filename + "` (`row` int(11), `type` varchar(10)";
+        let create = "CREATE TABLE `" + this.uploadInfo.file.filename + "` (`row` int(11), `type` varchar(10), `favorite` varchar(1)";
         for (var i = 0; i < head.length; i++) {
             create += ", `" + head[i] + "` varchar(300)";
         }
@@ -142,8 +142,9 @@ class UploadServer {
             fs.unlinkSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv');
         }
         for (var r = 0; r < rows.length; r++) {
-            var l = this.enclosed + rows[r] + this.enclosed + this.separator + this.enclosed + (rows[r] == this.uploadInfo.params.headerRowNumber + "" ? "header" : "row") +
-                this.enclosed;
+            var l = this.enclosed + rows[r] + this.enclosed + this.separator + // Row
+                this.enclosed + (rows[r] == this.uploadInfo.params.headerRowNumber + "" ? "header" : "row") + this.enclosed + this.separator + // Favorite
+                this.enclosed + "0" + this.enclosed; // favorite
             for (var c = 0; c < head.length; c++) {
                 let value = lines[rows[r]][head[c]];
                 l += this.separator + this.enclosed + (value ? value : "") + this.enclosed;
@@ -158,12 +159,13 @@ class UploadServer {
                     "ENCLOSED BY '" + this.enclosed + "' " +
                     "LINES TERMINATED BY '" + this.lineSeparator + "';";
                 this.connexion.querySql((error, data) => {
-                    this.uploadInfo.params.affectedRows = data.affectedRows;
                     if (!error) {
+                        this.uploadInfo.params.affectedRows = data.affectedRows;
                         this.createConfigurationFile((data) => {
                             this.uploadInfo.file.idfile = data.insertId;
                             this.myToolbox.log("Import terminated with success");
-                            let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.params.title + ") is now available for you with: " + this.uploadInfo.params.affectedRows +
+                            let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " +
+                                this.uploadInfo.params.title + ") is now available for you with: " + this.uploadInfo.params.affectedRows +
                                 " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
                             this.sendEmail(this.uploadInfo.params.owner, "Import teminated", html);
                             if (fs.existsSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv')) {
