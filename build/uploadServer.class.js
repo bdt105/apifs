@@ -16,21 +16,23 @@ class UploadServer {
     }
     logMessage(message) {
         if (this.configuration.common.logToConsole) {
+            let owner = this.uploadInfo && this.uploadInfo.params && this.uploadInfo.params.owner ? this.uploadInfo.params.owner : "";
             if (util_1.isObject(message)) {
-                console.log(JSON.stringify(message));
+                console.log(JSON.stringify(message) + " --- " + owner);
             }
             else {
-                console.log(message);
+                console.log(message + " --- " + owner);
             }
         }
     }
     logError(error) {
         if (this.configuration.common.logToConsole) {
+            let owner = this.uploadInfo && this.uploadInfo.params && this.uploadInfo.params.owner ? this.uploadInfo.params.owner : "";
             if (util_1.isObject(error)) {
-                console.error(JSON.stringify(error));
+                console.error(JSON.stringify(error) + " --- " + owner);
             }
             else {
-                console.error(error);
+                console.error(error + " --- " + owner);
             }
         }
     }
@@ -81,7 +83,7 @@ class UploadServer {
     }
     /*
         private importCsvToTable(fileName: string) {
-            this.myToolbox.log("Creation of table " + fileName);
+            this.logMessage("Creation of table " + fileName);
     
             let sql = "CREATE TABLE `" + fileName + "`" +
                 " (`iditem` int(11) NOT NULL, " +
@@ -109,7 +111,7 @@ class UploadServer {
                         this.connexion.querySql(
                             (error: any, data: any) => {
                                 if (!error) {
-                                    this.myToolbox.log("Import terminated with success");
+                                    this.logMessage("Import terminated with success");
                                     let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " + this.uploadInfo.body.title + ") is now available for you with: " + data.affectedRows +
                                         " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
                                     this.sendEmail(this.uploadInfo.body.owner, "Import teminated", html);
@@ -163,7 +165,7 @@ class UploadServer {
                         this.uploadInfo.params.affectedRows = data.affectedRows;
                         this.createConfigurationFile((data) => {
                             this.uploadInfo.file.idfile = data.insertId;
-                            this.myToolbox.log("Import terminated with success");
+                            this.logMessage("Import terminated with success");
                             let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " +
                                 this.uploadInfo.params.title + ") is now available for you with: " + this.uploadInfo.params.affectedRows +
                                 " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
@@ -190,7 +192,7 @@ class UploadServer {
     parseExcel() {
         var fs = require('fs');
         var XLSX = require('xlsx');
-        this.myToolbox.log("Start Excel parsing");
+        this.logMessage("Start Excel parsing" + this.uploadInfo.params.owner);
         let uploadDirectory = this.configuration.common.uploadDirectory + '/';
         var buf = fs.readFileSync(uploadDirectory + this.uploadInfo.file.filename);
         var wb = null;
@@ -199,8 +201,8 @@ class UploadServer {
         }
         catch (error) {
         }
-        this.myToolbox.log("Excel parsing done");
-        this.myToolbox.log("Start Excel to csv process");
+        this.logMessage("Excel parsing done");
+        this.logMessage("Start Excel to csv process");
         if (wb) {
             let mySheet = wb.Sheets[this.uploadInfo.params.sheetName];
             if (mySheet) {
@@ -231,20 +233,20 @@ class UploadServer {
             }
             else {
                 this.respond(this.response, 415, { "message": "Sheet not found" });
-                this.myToolbox.log("Sheet not found");
+                this.logMessage("Sheet not found");
             }
         }
         else {
             this.respond(this.response, 415, { "message": "Error parsing Excel file" });
-            this.myToolbox.log("Error parsing Excel file");
+            this.logMessage("Error parsing Excel file");
         }
-        this.myToolbox.log("End Excel to csv process");
+        this.logMessage("End Excel to csv process");
     }
     /*
         private parseExcel(fileName: string, fileId: number, sheetName: string, rowStartCount: number) {
             var fs = require('fs');
             var XLSX = require('xlsx');
-            this.myToolbox.log("Start Excel parsing");
+            this.logMessage("Start Excel parsing");
     
             let uploadDirectory = this.configuration.common.uploadDirectory + '/';
     
@@ -255,9 +257,9 @@ class UploadServer {
             } catch (error) {
     
             }
-            this.myToolbox.log("Excel parsing done");
+            this.logMessage("Excel parsing done");
     
-            this.myToolbox.log("Start Excel to csv process");
+            this.logMessage("Start Excel to csv process");
             if (wb) {
                 let mySheet = wb.Sheets[sheetName];
                 if (mySheet) {
@@ -286,13 +288,13 @@ class UploadServer {
                     this.createAndImportTable(ret, rowStartCount, fileName, fileId);
                 } else {
                     this.respond(this.response, 415, { "message": "Sheet not found" });
-                    this.myToolbox.log("Sheet not found");
+                    this.logMessage("Sheet not found");
                 }
             } else {
                 this.respond(this.response, 415, { "message": "Error parsing Excel file" });
-                this.myToolbox.log("Error parsing Excel file");
+                this.logMessage("Error parsing Excel file");
             }
-            this.myToolbox.log("End Excel to csv process");
+            this.logMessage("End Excel to csv process");
     
         }
     */
@@ -309,7 +311,7 @@ class UploadServer {
             "'" + this.uploadInfo.file.originalname + "', '" + this.uploadInfo.file.filename + "', '" + this.uploadInfo.params.importantColumns + "', " +
             this.uploadInfo.params.headerRowNumber + ", '" + this.uploadInfo.params.title + "', '" + this.uploadInfo.params.owner + "', 0,'" +
             this.uploadInfo.params.keyColumn + "')";
-        this.myToolbox.log("Adding the configuration data");
+        this.logMessage("Adding the configuration data");
         this.connexion.connectSql();
         this.connexion.querySqlWithoutConnexion((error, data) => {
             if (data) {
@@ -384,7 +386,7 @@ class UploadServer {
                         this.logMessage("Upload directory created");
                     }
         
-                    this.myToolbox.log("Adding the configuration data");
+                    this.logMessage("Adding the configuration data");
                     let sql = "insert into configuration (fileName, tableName, importantColumns, headerRowNumber, title, owner, isCurrent, keyColumn) values (" +
                         "'" + req.file.originalname + "', '" + req.file.filename + "', '" + req.body.importantColumns + "', " +
                         req.body.headerRowNumber + ", '" + req.body.title + "', '" + req.body.owner + "', 0,'" + req.body.keyColumn + "')";
@@ -446,7 +448,7 @@ class UploadServer {
                     return;
                 }
             }
-            this.myToolbox.log("Deleting the configuration data");
+            this.logMessage("Deleting the configuration data");
             let sql = "delete from table configuration where tableName = '" + request.body.tableName + "';";
             if (request.deleteItemPlus) {
                 sql += "delete from table itemplus where tableName = '" + request.body.tableName + "';";

@@ -1,5 +1,5 @@
 import { MyToolbox } from "./myToolbox";
-import { Connexion, Token } from 'bdt105connexion/dist';
+import { Connexion } from 'bdt105connexion/dist';
 import { isObject } from 'util';
 
 export class UploadServer {
