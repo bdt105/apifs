@@ -346,7 +346,7 @@ class UploadServer {
     createConfigurationFile(callbackSuccess, callbackFailure) {
         let sql = "insert into configuration (fileName, tableName, headerRowNumber, owner) values (" +
             "'" + this.uploadInfo.file.originalname + "', '" + this.uploadInfo.file.filename + "', " +
-            this.uploadInfo.params.headerRowNumber + "', '" + this.uploadInfo.params.owner + "')";
+            this.uploadInfo.params.headerRowNumber + ", '" + this.uploadInfo.params.owner + "')";
         if (this.uploadInfo.params.overwriteData && this.uploadInfo.file.idconfiguration) {
             // To update de modificationDate
             sql = "update configuration set idconfiguration=" + this.uploadInfo.file.idconfiguration + " where idconfiguration=" + this.uploadInfo.file.idconfiguration;
