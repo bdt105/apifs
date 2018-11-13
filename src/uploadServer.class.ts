@@ -168,6 +168,7 @@ export class UploadServer {
             }
                 fs.appendFileSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv', l + this.lineSeparator);
         }
+
         this.connexion.querySql(
             (errorDrop: any, dataDrop: any) => {
                 if (!errorDrop) {
@@ -364,9 +365,11 @@ export class UploadServer {
         }
     }
 
+    /*
     private clearUndefined(data: string){
         return data == undefined ? "" : data;
     }
+    */
 
     private createConfigurationFile(callbackSuccess: Function, callbackFailure: Function) {
         let sql = "insert into configuration (fileName, tableName, headerRowNumber, owner) values (" +

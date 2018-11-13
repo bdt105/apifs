@@ -340,9 +340,11 @@ class UploadServer {
             this.logMessage("File deleted: " + mysqlDirectory + tableName + '.csv');
         }
     }
-    clearUndefined(data) {
+    /*
+    private clearUndefined(data: string){
         return data == undefined ? "" : data;
     }
+    */
     createConfigurationFile(callbackSuccess, callbackFailure) {
         let sql = "insert into configuration (fileName, tableName, headerRowNumber, owner) values (" +
             "'" + this.uploadInfo.file.originalname + "', '" + this.uploadInfo.file.filename + "', " +
