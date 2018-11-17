@@ -25,9 +25,9 @@
         "host": "localhost",
         "user": "root",
         "port": "3306",
-        "password": "root",
+        "password": "Root772-",
         "database": "listing",
-        "fileDirectory": "/var/lib/mysql-files/"
+        "fileDirectory": "/var/lib/mysql-files/" 
     },
     "allowedUsers": [
         {

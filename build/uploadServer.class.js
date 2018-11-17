@@ -129,13 +129,49 @@ class UploadServer {
                 }, sql);
         }
     */
+    importIntoTable() {
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
+        let sql = "LOAD DATA INFILE '" + mysqlDirectory + this.uploadInfo.file.filename + ".csv' " +
+            "INTO TABLE `" + this.uploadInfo.file.tableName + "` CHARACTER SET utf8 " +
+            "FIELDS TERMINATED BY '" + this.separator + "' " +
+            "ENCLOSED BY '" + this.enclosed + "' " +
+            "LINES TERMINATED BY '" + this.lineSeparator + "';";
+        var fs = require('fs');
+        this.connexion.querySql((error, data) => {
+            if (!error) {
+                this.uploadInfo.params.affectedRows = data.affectedRows;
+                this.createConfigurationFile((data) => {
+                    if (data.insertId) {
+                        this.uploadInfo.file.idfile = data.insertId;
+                    }
+                    else {
+                        this.uploadInfo.file.idfile = this.uploadInfo.file.idconfiguration;
+                    }
+                    this.logMessage("Import terminated with success");
+                    let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " +
+                        this.uploadInfo.params.title + ") is now available for you with: " + this.uploadInfo.params.affectedRows +
+                        " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
+                    this.sendEmail(this.uploadInfo.params.owner, "Import teminated", html);
+                    if (fs.existsSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv')) {
+                        fs.unlinkSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv');
+                    }
+                    this.respond(this.response, 200, this.uploadInfo);
+                }, (error) => {
+                    this.respond(this.response, 500, error);
+                });
+            }
+            else {
+                this.respond(this.response, 500, error);
+            }
+        }, sql);
+    }
     createAndImportTable(lines) {
         let headers = lines[this.uploadInfo.params.headerRowNumber];
         let head = Object.keys(headers);
         let dropTable = "DROP TABLE IF EXISTS `" + this.uploadInfo.file.tableName + "`";
         let createTable = "CREATE TABLE `" + this.uploadInfo.file.tableName + "` (`row` int(11), `type` varchar(10), `favorite` varchar(1)";
         for (var i = 0; i < head.length; i++) {
-            createTable += ", `" + head[i] + "` varchar(300)";
+            createTable += ", `" + head[i] + "` varchar(100)";
         }
         createTable += ", PRIMARY KEY (`row`)) ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
         let rows = Object.keys(lines);
@@ -154,49 +190,23 @@ class UploadServer {
             }
             fs.appendFileSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv', l + this.lineSeparator);
         }
-        this.connexion.querySql((errorDrop, dataDrop) => {
-            if (!errorDrop) {
-                this.connexion.querySql((error, data) => {
-                    if (!error) {
-                        let sql = "LOAD DATA INFILE '" + mysqlDirectory + this.uploadInfo.file.filename + ".csv' " +
-                            "INTO TABLE `" + this.uploadInfo.file.tableName + "` CHARACTER SET utf8 " +
-                            "FIELDS TERMINATED BY '" + this.separator + "' " +
-                            "ENCLOSED BY '" + this.enclosed + "' " +
-                            "LINES TERMINATED BY '" + this.lineSeparator + "';";
-                        this.connexion.querySql((error, data) => {
-                            if (!error) {
-                                this.uploadInfo.params.affectedRows = data.affectedRows;
-                                this.createConfigurationFile((data) => {
-                                    if (data.insertId) {
-                                        this.uploadInfo.file.idfile = data.insertId;
-                                    }
-                                    else {
-                                        this.uploadInfo.file.idfile = this.uploadInfo.file.idconfiguration;
-                                    }
-                                    this.logMessage("Import terminated with success");
-                                    let html = "Hello, a new file (" + this.uploadInfo.file.originalname + " - " +
-                                        this.uploadInfo.params.title + ") is now available for you with: " + this.uploadInfo.params.affectedRows +
-                                        " row(s), take a look at " + this.configuration.common.siteUrl + "<br>Congrats.";
-                                    this.sendEmail(this.uploadInfo.params.owner, "Import teminated", html);
-                                    if (fs.existsSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv')) {
-                                        fs.unlinkSync(mysqlDirectory + this.uploadInfo.file.filename + '.csv');
-                                    }
-                                    this.respond(this.response, 200, this.uploadInfo);
-                                }, (error) => {
-                                    this.respond(this.response, 500, error);
-                                });
-                            }
-                            else {
-                                this.respond(this.response, 500, error);
-                            }
-                        }, sql);
-                    }
-                    else {
-                        this.respond(this.response, 500, error);
-                    }
-                }, createTable);
-            }
-        }, dropTable);
+        if (this.uploadInfo.params.overwriteData == "true") {
+            this.connexion.querySql((errorDrop, dataDrop) => {
+                if (!errorDrop) {
+                    this.connexion.querySql((error, data) => {
+                        if (!error) {
+                            this.importIntoTable();
+                        }
+                        else {
+                            this.respond(this.response, 500, error);
+                        }
+                    }, createTable);
+                }
+            }, dropTable);
+        }
+        else {
+            this.importIntoTable();
+        }
         return createTable;
     }
     parseExcel() {
@@ -353,19 +363,6 @@ class UploadServer {
             // To update de modificationDate
             sql = "update configuration set idconfiguration=" + this.uploadInfo.file.idconfiguration + " where idconfiguration=" + this.uploadInfo.file.idconfiguration;
         }
-        /* Backup
-                let sql = "insert into configuration (fileName, tableName, importantColumns, headerRowNumber, title, owner, isCurrent, keyColumn) values (" +
-                    "'" + this.uploadInfo.file.originalname + "', '" + this.uploadInfo.file.filename + "', '" + this.clearUndefined(this.uploadInfo.params.importantColumns) + "', " +
-                    this.uploadInfo.params.headerRowNumber + ", '" + this.clearUndefined(this.uploadInfo.params.title) + "', '" + this.uploadInfo.params.owner + "', 0,'" +
-                    this.clearUndefined(this.uploadInfo.params.keyColumn) + "')";
-                if (this.uploadInfo.params.overwriteData && this.uploadInfo.file.idconfiguration) {
-                    sql = "update configuration set importantColumns='" + this.clearUndefined(this.uploadInfo.params.importantColumns) + "'" +
-                        ", headerRowNumber=" + this.uploadInfo.params.headerRowNumber +
-                        ", keyColumn='" + this.clearUndefined(this.uploadInfo.params.keyColumn) + "'"
-                        ", title='" + this.clearUndefined(this.uploadInfo.params.title) + "' " +
-                        "where idconfiguration=" + this.uploadInfo.file.idconfiguration;
-                }
-        */
         this.logMessage("Adding the configuration data");
         this.connexion.connectSql();
         this.connexion.querySqlWithoutConnexion((error, data) => {
@@ -378,6 +375,13 @@ class UploadServer {
                 callbackFailure(error);
             }
         }, sql);
+    }
+    prepareData(data) {
+        let ret = {};
+        for (var i = 0; i < data.length; i++) {
+            ret[i] = data[i];
+        }
+        return ret;
     }
     assign() {
         this.app.get('/', (request, response) => {
@@ -410,6 +414,8 @@ class UploadServer {
             console.log("uploadData");
             let token = req.body.token;
             let data = req.body.data;
+            let fileName = req.body.fileName;
+            let owner = req.body.owner;
             this.uploadInfo = req;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
@@ -418,17 +424,20 @@ class UploadServer {
                     return;
                 }
             }
-            this.uploadInfo = {};
-            this.uploadInfo.params = req.body;
-            this.uploadInfo.file = req.file;
-            this.response = res;
-            var fs = require('fs');
-            let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory;
-            if (!fs.existsSync(uploadDirectory)) {
-                fs.mkdirSync(uploadDirectory);
-                this.logMessage("Upload directory created");
+            if (!owner || !fileName || !data) {
+                this.respond(res, 403, 'Owner, data or fileName is absent');
+                return;
             }
-            this.parseExcel();
+            let ret = this.prepareData(data);
+            this.uploadInfo = {};
+            this.uploadInfo.file = {};
+            this.uploadInfo.params = {};
+            this.uploadInfo.params.headerRowNumber = 0;
+            this.uploadInfo.params.owner = owner;
+            this.uploadInfo.file.tableName = fileName;
+            this.uploadInfo.file.filename = fileName + "_" + this.myToolbox.getUniqueId();
+            this.uploadInfo.params.overwriteData = req.body.overwriteData;
+            this.createAndImportTable(ret);
         });
         this.app.post('/uploadImage', this.upload.single('file'), (req, res) => {
             console.log("uploadImage");

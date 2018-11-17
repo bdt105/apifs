@@ -10,14 +10,14 @@
         "imageUrlDirectory": "/images",
         "email": "",
         "password": "",
-        "siteUrl": "http://www.spreadsheetscan.com"
+        "siteUrl": ""
     },
     "authentification": 
     {
         "active": true,
         "secret": "122344",
         "salt": "$2a$10$Vn/zPCM8sSSaYnRmggV4CO",
-        "userRequestEmail": "",
+        "userRequestEmail": "bdt105@gmail.com",
         "adminToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZHVzZXIiOjEsImxvZ2luIjoiYWRtaW4iLCJwYXNzd29yZCI6bnVsbCwiZW1haWwiOiJiZXJuYXJkLmRlcmVnbmF1Y291cnRAdmlkYWwuZnIiLCJ0eXBlIjowLCJjb3VudHJ5IjoiZnIiLCJsYXN0TmFtZSI6bnVsbCwiZmlyc3ROYW1lIjpudWxsLCJwaG9uZTEiOm51bGwsInBob25lMiI6bnVsbCwicGhvbmUzIjpudWxsLCJvZmZpY2UiOm51bGwsInRhZyI6IiIsImF2YWlsYWJpbGl0eSI6bnVsbCwibGFuZyI6ImZyIiwicG9zdGFsY29kZSI6bnVsbCwiY2l0eSI6bnVsbCwiYWRkcmVzczEiOm51bGwsImFkZHJlc3MyIjpudWxsLCJpYXQiOjE1MDU0ODcyODJ9.rBdtZX4wU1KVuDQCRxZyVXfHSJZ0wfr4iFxtOJGOZ4Q"
     },    
     "mySql": 
@@ -27,11 +27,11 @@
         "port": "3306",
         "password": "Root772-",
         "database": "listing",
-        "fileDirectory": "/var/lib/mysql-files/"
+        "fileDirectory": "/var/lib/mysql-files/" 
     },
     "allowedUsers": [
         {
-            "email": "tutu@gmail.com",
+            "email": "bdt105@gmail.com",
             "type": 0
         },
         {

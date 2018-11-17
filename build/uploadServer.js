@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
-const uploadServer_class_1 = require("./uploadServer.class");
 const myToolbox_1 = require("./myToolbox");
 const dist_1 = require("bdt105connexion/dist");
+const api_upload_1 = require("./api.upload");
 let app = express();
 let myToolbox = new myToolbox_1.MyToolbox();
 let port = myToolbox.getConfiguration().common.uploadApiPort;
@@ -34,7 +34,7 @@ if (myToolbox.getConfiguration().authentification && myToolbox.getConfiguration(
 var conn = new dist_1.Connexion(myToolbox.getConfiguration().mySql, jwtConfiguration);
 var multer = require('multer');
 var upload = multer({ dest: myToolbox.getConfiguration().common.uploadDirectory });
-let us = new uploadServer_class_1.UploadServer(app, upload, conn, myToolbox.getConfiguration());
+let us = new api_upload_1.ApiUpload(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 app.listen(port);
 conn.tryConnectSql();

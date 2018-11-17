@@ -1,7 +1,7 @@
 import express = require('express');
-import { UploadServer } from './uploadServer.class';
 import { MyToolbox } from "./myToolbox";
 import { Connexion, JwtConfiguration } from 'bdt105connexion/dist';
+import { ApiUpload } from './api.upload';
 
 let app = express();
 let myToolbox = new MyToolbox();
@@ -40,7 +40,7 @@ var conn = new Connexion(myToolbox.getConfiguration().mySql, jwtConfiguration);
 var multer = require('multer');
 var upload = multer({ dest: myToolbox.getConfiguration().common.uploadDirectory });
 
-let us = new UploadServer(app, upload, conn, myToolbox.getConfiguration());
+let us = new ApiUpload(app, upload, conn, myToolbox.getConfiguration());
 us.assign();
 
 app.listen(port);
