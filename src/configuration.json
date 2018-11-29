@@ -8,6 +8,7 @@
         "uploadDirectory": "/home/bernard/uploads/",
         "imageDirectory": "/home/bernard/listing/",
         "imageUrlDirectory": "/images",
+        "ftpDirectory": "/home/ftpuser/ftp/files/",
         "email": "",
         "password": "",
         "siteUrl": ""

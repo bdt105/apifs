@@ -98,12 +98,15 @@ export class SmartUpload {
         }
 
         for (var r = 0; r < rows.length; r++) {
-            var l = this.enclosed + rows[r] + this.enclosed + this.separator + // Row
-                this.enclosed + (rows[r] == headerRowNumber + "" ? "header" : "row") + this.enclosed + this.separator + // Favorite
-                this.enclosed + "0" + this.enclosed; // favorite
+            var l = "";
+            /*
+                        var l = this.enclosed + rows[r] + this.enclosed + this.separator + // Row
+                            this.enclosed + (rows[r] == headerRowNumber + "" ? "header" : "row") + this.enclosed + this.separator + // Favorite
+                            this.enclosed + "0" + this.enclosed; // favorite
+            */
             for (var c = 0; c < head.length; c++) {
                 let value = csvObject[rows[r]][head[c]];
-                l += this.separator + this.enclosed + (value ? value : "") + this.enclosed;
+                l += (l ? this.separator : "") + this.enclosed + (value ? value : "") + this.enclosed;
             }
             fs.appendFileSync(directory + fileName, l + this.lineSeparator);
         }
@@ -111,7 +114,7 @@ export class SmartUpload {
     }
 
     private importCsvToTable(callback: Function, csvFileName: string, tableName: string) {
-        let mysqlDirectory = this.configuration.mySql.fileDirectory + "/";
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
         let sql = "LOAD DATA INFILE '" + mysqlDirectory + csvFileName + "' " +
             "INTO TABLE `" + tableName + "` CHARACTER SET utf8 " +
             "FIELDS TERMINATED BY '" + this.separator + "' " +
@@ -122,31 +125,64 @@ export class SmartUpload {
         this.connexion.querySql(
             (error: any, data: any) => {
                 if (!error) {
-                    fs.unlinkSync(mysqlDirectory + csvFileName);
+                    this.customizeTable(
+                        (data1: any, error1: any) => {
+                            fs.unlinkSync(mysqlDirectory + csvFileName);
+                            callback(data1, error1);
+                        }, tableName
+                    )
+                } else {
+                    callback(data, error);
                 }
-                callback(data, error);
             }, sql);
     }
 
+    private customizeTable(callback: Function, tableName: string) {
+        let sql =
+            "ALTER TABLE `" + tableName + "` " +
+            "ADD COLUMN `row` INT(11) NOT NULL AUTO_INCREMENT FIRST, " +
+            "ADD COLUMN `type` VARCHAR(6) NULL DEFAULT 'row' AFTER `row` , " +
+            "ADD COLUMN `favorite` VARCHAR(1) NULL DEFAULT '0' AFTER `type`, " +
+            "ADD PRIMARY KEY (`row`);"
+        this.connexion.querySql(
+            (error: any, data: any) => {
+                if (!error) {
+                    let sql1 = "UPDATE `" + tableName + "` SET `type`='header' where row = 1 ";
+                    this.connexion.querySql((error1: any, data1: any) => {
+                        callback(data1, error1);
+
+                    }, sql1);
+                } else {
+                    callback(data, error);
+
+                }
+            }, sql
+        );
+    }
+
     public createTable(callback: Function, tableName: string, fields: any) {
-        let createTable = "CREATE TABLE `" + tableName + "` (`row` int(11), `type` varchar(10), `favorite` varchar(1)";
+        let fieldScript = "";
         for (var i = 0; i < fields.length; i++) {
-            createTable += ", `" + fields[i] + "` varchar(100)"
+            fieldScript += (fieldScript ? ", " : "") + "`" + fields[i] + "` varchar(100)";
         }
-        createTable += ", PRIMARY KEY (`row`)) ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
+        let createTableSql = "CREATE TABLE `" + tableName + "` (" + fieldScript + ") ENGINE=InnoDB DEFAULT CHARSET=utf8; ";
         this.connexion.querySql(
             (error: any, data: any) => {
                 callback(data, error);
-            }, createTable
+            }, createTableSql
         );
     }
 
     public dropTable(callback: Function, tableName: string) {
-        let dropTable = "DROP TABLE IF EXISTS `" + tableName + "`";
-        this.connexion.querySql(
-            (error: any, data: any) => {
-                callback(data, error);
-            }, dropTable);
+        if (tableName) {
+            let dropTable = "DROP TABLE IF EXISTS `" + tableName + "`";
+            this.connexion.querySql(
+                (error: any, data: any) => {
+                    callback(data, error);
+                }, dropTable);
+        } else {
+            callback(null, null);
+        }
     }
 
     public excelFileToCsvJson(fileName: string, sheetName: string, headerRowNumber: number) {
@@ -333,55 +369,55 @@ export class SmartUpload {
     // }
 
     private configureAndImport(callback: Function, fileName: string, csvFileName: string, fields: any, headerRowNumber: number, idconfiguration: number, tableName: string) {
-        if (!tableName) {
-            tableName = csvFileName;
-        }
-        this.createTable((data1: any, error1: any) => {
-            if (!error1) {
-                this.saveConfigurationFile((data2: any, error2: any) => {
-                    if (!error2) {
-                        this.importCsvToTable((data3: any, error3: any) => {
-                            callback(data3, error3);
-                        }, csvFileName, tableName);
+        this.dropTable((data: any, error: any) => {
+            if (!error) {
+                this.createTable((data1: any, error1: any) => {
+                    if (!error1) {
+                        this.saveConfigurationFile((data2: any, error2: any) => {
+                            if (!error2) {
+                                this.importCsvToTable((data3: any, error3: any) => {
+                                    if (!error3) {
+                                        callback(data3, error3);
+                                    }
+                                }, csvFileName, tableName);
+                            } else {
+                                callback(data2, error2);
+                            }
+                        }, tableName, fileName, headerRowNumber, idconfiguration);
                     } else {
-                        callback(data2, error2);
+                        callback(data1, error1);
                     }
-                }, tableName, fileName, headerRowNumber, idconfiguration);
+                }, tableName, fields);
             } else {
-                callback(data1, error1);
+                callback(data, error);
             }
-        }, tableName, fields);
+        }, tableName);
     }
 
-    private importCsvFile(callback: Function, fileName: string, fields: any, downloadFileName: string, headerRowNumber: number, overwriteData: boolean) {
+    public importCsvFile(callback: Function, fileName: string, fields: any, csvFileName: string, headerRowNumber: number, overwriteData: boolean) {
         this.idconfiguration = null;
         this.loadConfigurationFile((data: any, error: any) => {
             if (!error) {
+                let tableName = this.myToolbox.getUniqueId();
                 if (data && data.length > 0) {
+                    tableName = overwriteData ? data[0].tableName : tableName;
                     this.idconfiguration = overwriteData ? data[0].idconfiguration : null;
-                    let tableName = overwriteData ? data[0].tableName : null;
                     if (this.idconfiguration) {
-                        this.dropTable((data1: any, error1: any) => {
-                            if (!error1) {
-                                this.configureAndImport(
-                                    (data2: any, error2: any) => {
-                                        callback(data2, error2);
-                                    }, fileName, downloadFileName, fields, headerRowNumber, this.idconfiguration, tableName);
-                            } else {
-                                callback(data1, error1);
-                            }
-                        }, data[0].tableName);
+                        this.configureAndImport(
+                            (data2: any, error2: any) => {
+                                callback(data2, error2);
+                            }, fileName, csvFileName, fields, headerRowNumber, this.idconfiguration, tableName);
                     } else {
                         this.configureAndImport(
                             (data2: any, error2: any) => {
                                 callback(data2, error2);
-                            }, fileName, downloadFileName, fields, headerRowNumber, null, null);
+                            }, fileName, csvFileName, fields, headerRowNumber, null, tableName);
                     }
                 } else {
                     this.configureAndImport(
                         (data2: any, error2: any) => {
                             callback(data2, error2);
-                        }, fileName, downloadFileName, fields, headerRowNumber, null, null);
+                        }, fileName, csvFileName, fields, headerRowNumber, null, tableName);
                 }
             } else {
                 callback(null, error);
@@ -390,26 +426,28 @@ export class SmartUpload {
 
     }
 
-    public importFile(callback: Function, directory: string, fileName: string, isExcelFile: boolean, downloadFileName: string, sheetName: string, headerRowNumber: number, overwriteData: boolean) {
+    // public importFile(callback: Function, directory: string, fileName: string, downloadFileName: string, headerRowNumber: number, overwriteData: boolean) {
+    //     let fields: any = null;
+    //     this.csvFileToCsvJson(
+    //         (data: any) => {
+    //             fields = Object.keys(data[headerRowNumber]);
+    //             this.importCsvFile(callback, fileName, fields, downloadFileName, headerRowNumber, overwriteData);
+    //         }, directory + fileName);
+    // }
+
+
+    public importExcelFile(callback: Function, directory: string, fileName: string, downloadFileName: string, sheetName: string, headerRowNumber: number, overwriteData: boolean) {
         let csvObject = null;
         let fields: any = null;
 
-        if (isExcelFile) {
-            csvObject = this.excelFileToCsvJson(directory + downloadFileName, sheetName, headerRowNumber);
-            let mysqlDirectory = this.configuration.mySql.fileDirectory;
-            this.writeCsvFile(mysqlDirectory, downloadFileName, csvObject, headerRowNumber);
-            fields = Object.keys(csvObject[headerRowNumber]);
-            if (fields) {
-                this.importCsvFile(callback, fileName, fields, downloadFileName, headerRowNumber, overwriteData);
-            } else {
-                callback(null, { "error": "Error reading csv" });
-            }
+        csvObject = this.excelFileToCsvJson(directory + downloadFileName, sheetName, headerRowNumber);
+        let mysqlDirectory = this.configuration.mySql.fileDirectory;
+        this.writeCsvFile(mysqlDirectory, downloadFileName, csvObject, headerRowNumber);
+        fields = Object.keys(csvObject[headerRowNumber]);
+        if (fields) {
+            this.importCsvFile(callback, fileName, fields, downloadFileName, headerRowNumber, overwriteData);
         } else {
-            this.csvFileToCsvJson(
-                (data: any) => {
-                    fields = Object.keys(data[headerRowNumber]);
-                    this.importCsvFile(callback, fileName, fields, downloadFileName, headerRowNumber, overwriteData);
-                }, directory + fileName);
+            callback(null, { "error": "Error reading csv" });
         }
     }
 

@@ -21,6 +21,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Lancer le programme testImport",
+            "program": "${workspaceRoot}/build/testImportCsv.js",
+            "cwd": "${workspaceRoot}/build/",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/build/**/*.js"
+            ],
+            "runtimeArgs": ["--nolazy"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Lancer le programme api",
             "program": "${workspaceRoot}/build/apiServer.js",
             "cwd": "${workspaceRoot}/build/",

@@ -9,10 +9,9 @@ export class ApiUpload {
     private myToolbox = new MyToolbox();
     private upload: any;
 
-    private response: any;
     private configuration: any;
 
-    private uploadInfo: any = {};
+    private currentOwner: string;
 
     constructor(app: any, upload: any, connexion: Connexion, configuration: any) {
         this.app = app;
@@ -23,23 +22,20 @@ export class ApiUpload {
 
     protected logMessage(message: any) {
         if (this.configuration.common.logToConsole) {
-            let owner = this.uploadInfo && this.uploadInfo.params && this.uploadInfo.params.owner ? this.uploadInfo.params.owner : "";
             if (isObject(message)) {
-                console.log(JSON.stringify(message) + " --- " + owner);
+                console.log(JSON.stringify(message) + " --- " + this.currentOwner);
             } else {
-                console.log(message + " --- " + owner);
+                console.log(message + " --- " + this.currentOwner);
             }
         }
     }
 
     protected logError(error: any) {
         if (this.configuration.common.logToConsole) {
-            let owner = this.uploadInfo && this.uploadInfo.params && this.uploadInfo.params.owner ? this.uploadInfo.params.owner : "";
-
             if (isObject(error)) {
-                console.error(JSON.stringify(error) + " --- " + owner);
+                console.error(JSON.stringify(error) + " --- " + this.currentOwner);
             } else {
-                console.error(error + " --- " + owner);
+                console.error(error + " --- " + this.currentOwner);
             }
         }
     }
@@ -72,9 +68,8 @@ export class ApiUpload {
         });
 
         this.app.post('/uploadExcelFile', this.upload.single('file'), (req: any, res: any) => {
-            console.log("uploadFile");
+            this.currentOwner = req.body.owner;
             let token = req.body.token;
-            this.uploadInfo = req;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
                 if (!authent.decoded) {
@@ -82,10 +77,6 @@ export class ApiUpload {
                     return;
                 }
             }
-            this.uploadInfo = {};
-            this.uploadInfo.params = req.body;
-            this.uploadInfo.file = req.file;
-            this.response = res;
             var fs = require('fs');
             let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory;
             if (!fs.existsSync(uploadDirectory)) {
@@ -94,21 +85,22 @@ export class ApiUpload {
             }
             let smartUpload = new SmartUpload(this.connexion, this.configuration, req.body.owner);
             let overwriteData = req.body.overwriteData == "true";
-            smartUpload.importFile(
+            smartUpload.importExcelFile(
                 (data: any, error: any) => {
                     if (!error) {
                         fs.unlinkSync(uploadDirectory + req.file.filename);
                         data.idconfiguration = smartUpload.idconfiguration;
                         data.originalFileName = req.file.originalname;
+                        this.respond(res, 200, data);
+                    } else {
+                        this.respond(res, 500, error);
                     }
-                    this.respond(res, 200, data);
-                }, uploadDirectory, req.file.originalname, true, req.file.filename, req.body.sheetname, req.body.headerRowNumber, overwriteData);
+                }, uploadDirectory, req.file.originalname, req.file.filename, req.body.sheetname, req.body.headerRowNumber, overwriteData);
         });
 
-        this.app.post('/uploadCsvFile', this.upload.array(), (req: any, res: any) => {
-            console.log("uploadCsvFile");
+        this.app.post('/uploadCsvFile', this.upload.single('file'), (req: any, res: any) => {
+            this.currentOwner = req.body.owner;
             let token = req.body.token;
-            let fileName = req.body.fileName;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
                 if (!authent.decoded) {
@@ -116,28 +108,36 @@ export class ApiUpload {
                     return;
                 }
             }
-            this.response = res;
             var fs = require('fs');
-            let mysqlDirectory = this.myToolbox.getConfiguration().mySql.fileDirectory;
-            if (fs.existsSync(mysqlDirectory + fileName)) {
-                let smartUpload = new SmartUpload(this.connexion, this.configuration, req.body.owner);
-                let overwriteData = req.body.overwriteData == "true";
-                smartUpload.importFile(
-                    (data: any, error: any) => {
-                        if (!error) {
-                            fs.unlinkSync(mysqlDirectory + fileName);
-                            data.idconfiguration = smartUpload.idconfiguration;
-                            data.originalFileName = req.file.originalname;
-                        }
-                        this.respond(res, 200, data);
-                    }, mysqlDirectory, req.body.originalname, false, fileName, null, 0, overwriteData);
-            } else {
-                this.respond(res, 400, { "message": "File not found " + mysqlDirectory + fileName })
+            let uploadDirectory = this.myToolbox.getConfiguration().common.uploadDirectory;
+            if (!fs.existsSync(uploadDirectory)) {
+                fs.mkdirSync(uploadDirectory);
+                this.logMessage("Upload directory created");
             }
-        });
+            let smartUpload = new SmartUpload(this.connexion, this.configuration, req.body.owner);
+            let overwriteData = req.body.overwriteData == "true";
+
+            let fields: any = null;
+            smartUpload.csvFileToCsvJson(
+                (data: any) => {
+                    fields = Object.keys(data[req.body.headerRowNumber]);
+                    smartUpload.importCsvFile(
+                        (data: any, error: any) => {
+                            if (!error) {
+                                fs.unlinkSync(uploadDirectory + req.file.filename);
+                                data.idconfiguration = smartUpload.idconfiguration;
+                                data.originalFileName = req.file.originalname;
+                                this.respond(res, 200, data);
+                            } else {
+                                this.respond(res, 500, error);
+                            }
+                        }, req.file.originalname, fields, req.file.filename, req.body.headerRowNumber, overwriteData);
+                }, uploadDirectory + req.file.filename);
+        }
+        );
 
         this.app.post('/uploadImage', this.upload.single('file'), (req: any, res: any) => {
-            console.log("uploadImage");
+            this.currentOwner = req.body.owner;
             let token = req.body.token;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
@@ -146,7 +146,6 @@ export class ApiUpload {
                     return;
                 }
             }
-            this.response = res;
             var fs = require('fs');
             let imageDirectory = this.configuration.common.imageDirectory;
             let imageUrlDirectory = this.configuration.common.imageUrlDirectory;
@@ -157,6 +156,7 @@ export class ApiUpload {
         });
 
         this.app.delete('/deleteImage', this.upload.array(), (request: any, response: any) => {
+            this.currentOwner = request.body.owner;
             let token = request.body.token;
             if (this.configuration.requiresToken) {
                 let authent = this.connexion.checkJwt(token);
@@ -176,6 +176,7 @@ export class ApiUpload {
         });
 
         this.app.post('/deleteConfigurationFile', this.upload.array(), (request: any, response: any) => {
+            this.currentOwner = request.body.owner;
             let token = request.body.token;
             let idconfiguration = request.body.idconfiguration;
             let deleteItemsPlus = request.body.deleteItemsPlus;
